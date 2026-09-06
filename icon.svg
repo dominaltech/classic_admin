@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="108" fill="#0a0a0a"/>
+  <rect x="24" y="24" width="464" height="464" rx="90" fill="none" stroke="#262626" stroke-width="4"/>
+  <!-- Luxury Monogram C -->
+  <path d="M 330 160 C 300 130, 250 120, 200 150 C 140 190, 130 290, 180 340 C 230 380, 300 375, 335 340" fill="none" stroke="#ffffff" stroke-width="32" stroke-linecap="round"/>
+  <!-- Sub-label -->
+  <text x="256" y="420" font-family="'Playfair Display', Georgia, serif" font-size="28" font-weight="700" letter-spacing="6" fill="#a3a3a3" text-anchor="middle">CLASSIC ADMIN</text>
+</svg>

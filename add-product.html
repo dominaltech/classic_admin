@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Product &amp; Bulk Upload | Classic Admin PWA</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+  <style>
+    .bulk-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .bulk-preview-card {
+      position: relative;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      aspect-ratio: 3/4;
+    }
+    .bulk-preview-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .bulk-preview-tag {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      background: rgba(0,0,0,0.85);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .bulk-preview-tag.primary {
+      background: #3b82f6;
+    }
+    .bulk-remove-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(220, 38, 38, 0.9);
+      color: white;
+      border: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      font-size: 12px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .dropzone-box {
+      background: var(--bg-surface);
+      border: 2px dashed var(--border);
+      padding: 24px;
+      border-radius: var(--radius-sm);
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+    .dropzone-box:hover {
+      border-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.05);
+    }
+  </style>
+</head>
+<body>
+  <header class="admin-header">
+    <div class="header-left">
+      <span class="brand-title">Classic Collection</span>
+      <span class="brand-badge">Admin PWA</span>
+    </div>
+    <div class="header-right">
+      <a href="all-products.html" class="btn-admin btn-ghost">← All Products</a>
+    </div>
+  </header>
+
+  <nav class="admin-nav-tabs">
+    <a href="index.html" class="admin-nav-tab">Dashboard</a>
+    <a href="orders.html" class="admin-nav-tab">Orders</a>
+    <a href="all-products.html" class="admin-nav-tab">All Products</a>
+    <a href="add-product.html" class="admin-nav-tab active">+ Add Product</a>
+    <a href="categories.html" class="admin-nav-tab">Categories &amp; Styles</a>
+    <a href="materials.html" class="admin-nav-tab">Fabric Materials</a>
+    <a href="banners.html" class="admin-nav-tab">Hero Banners</a>
+    <a href="users.html" class="admin-nav-tab">Customers</a>
+  </nav>
+
+  <main class="admin-container">
+    <div class="admin-card" style="max-width: 840px; margin: 0 auto;">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">ADD NEW CLOTH MATERIAL PRODUCT</h2>
+          <p class="card-subtitle">Fill in fabric details, taxonomy hierarchy, and bulk upload multiple high-res product photos to Supabase Storage.</p>
+        </div>
+      </div>
+
+      <form id="addProductForm" onsubmit="handleProductSubmit(event)">
+        <div class="form-group">
+          <label class="form-label" for="prodName">Product Title *</label>
+          <input type="text" id="prodName" class="form-control" placeholder="e.g. Classic Men's Formal White Linen Fabric" required oninput="generateSlug(this.value)">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="prodSlug">URL Slug (Auto-generated)</label>
+          <input type="text" id="prodSlug" class="form-control" placeholder="classic-mens-formal-white-linen-fabric" required>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="prodCategory">Category *</label>
+            <select id="prodCategory" class="form-control" required onchange="onCategoryChanged(this.value)">
+              <option value="">Select Category</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="prodStyle">Style *</label>
+            <select id="prodStyle" class="form-control" required onchange="onStyleChanged(this.value)">
+              <option value="">Select Style (Select Category first)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="prodPattern">Pattern Sub-Type</label>
+            <select id="prodPattern" class="form-control">
+              <option value="">Select Pattern (Optional)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="prodMaterial">Fabric Material *</label>
+            <select id="prodMaterial" class="form-control" required>
+              <option value="">Select Fabric Material</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="prodPrice">Price per Meter / Cut (₹) *</label>
+            <input type="number" id="prodPrice" class="form-control" placeholder="e.g. 600" required min="0" step="0.01">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="prodStock">Stock Quantity *</label>
+            <input type="number" id="prodStock" class="form-control" placeholder="e.g. 50" required min="0" step="1">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="prodDesc">Fabric Description &amp; Specifications</label>
+          <textarea id="prodDesc" class="form-control" rows="4" placeholder="Describe weave density, texture, recommended tailoring (shirting, kurta, suit), and care instructions..."></textarea>
+        </div>
+
+        <!-- BULK IMAGE UPLOAD SECTION -->
+        <div class="form-group" style="margin-top: 24px;">
+          <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Bulk Product Photos (Upload Multiple Images)</span>
+            <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">First image will be the primary catalog card</span>
+          </label>
+
+          <div class="dropzone-box" onclick="document.getElementById('prodBulkFiles').click()">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" style="margin-bottom: 8px; color: var(--text-muted);">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <circle cx="8.5" cy="8.5" r="1.5"></circle>
+              <polyline points="21 15 16 10 5 21"></polyline>
+            </svg>
+            <p style="font-size: 13px; font-weight: 600; margin-bottom: 4px; color: #ffffff;">Click to Select Multiple Photos or Drag &amp; Drop</p>
+            <p style="font-size: 11px; color: var(--text-muted);">Select 1 or more images (JPEG, PNG, WEBP). They will be uploaded directly to Supabase Storage 'product-images' bucket.</p>
+            <input type="file" id="prodBulkFiles" style="display: none;" accept="image/jpeg,image/png,image/webp,image/jpg" multiple onchange="handleBulkFileSelect(this)">
+          </div>
+
+          <!-- Live Preview Grid of Selected Images -->
+          <div id="bulkPreviewContainer" class="bulk-preview-grid" style="display: none;"></div>
+
+          <div style="margin-top: 14px;">
+            <label class="form-label" style="font-size: 11px; color: var(--text-muted);">Or External Image URLs (one URL per line or comma-separated):</label>
+            <textarea id="prodImageUrls" class="form-control" rows="2" placeholder="https://images.unsplash.com/photo-1...&#10;https://images.unsplash.com/photo-2..."></textarea>
+          </div>
+        </div>
+
+        <!-- Progress status -->
+        <div id="uploadProgressStatus" style="display: none; padding: 12px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-top: 16px; font-size: 13px; color: #60a5fa; text-align: center;">
+        </div>
+
+        <div style="margin-top: 24px;">
+          <button type="submit" id="saveProductBtn" class="btn-admin" style="width: 100%; padding: 14px; font-size: 14px;">
+            Publish Product &amp; Upload Images
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    let _allCategories = [];
+    let _allStyles = [];
+    let _allPatterns = [];
+    let _selectedFiles = [];
+
+    function generateSlug(text) {
+      document.getElementById('prodSlug').value = text
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
+    function handleBulkFileSelect(input) {
+      if (!input.files || input.files.length === 0) return;
+      
+      const newFiles = Array.from(input.files);
+      _selectedFiles = _selectedFiles.concat(newFiles);
+      renderBulkPreviews();
+      input.value = ''; // Reset input so re-selecting same file works
+    }
+
+    function removeSelectedFile(index) {
+      _selectedFiles.splice(index, 1);
+      renderBulkPreviews();
+    }
+
+    function renderBulkPreviews() {
+      const container = document.getElementById('bulkPreviewContainer');
+      if (_selectedFiles.length === 0) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+      }
+
+      container.style.display = 'grid';
+      container.innerHTML = _selectedFiles.map((file, idx) => {
+        const objectUrl = URL.createObjectURL(file);
+        const isPrimary = idx === 0;
+        return `
+          <div class="bulk-preview-card">
+            <img src="${objectUrl}" alt="Preview ${idx + 1}" onload="URL.revokeObjectURL('${objectUrl}')">
+            <span class="bulk-preview-tag ${isPrimary ? 'primary' : ''}">${isPrimary ? 'PRIMARY' : '#' + (idx + 1)}</span>
+            <button type="button" class="bulk-remove-btn" title="Remove" onclick="removeSelectedFile(${idx})">×</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function loadFormDropdowns() {
+      const client = window.adminSupabase;
+      if (!client) return;
+
+      try {
+        const [catsRes, stylesRes, patternsRes, materialsRes] = await Promise.all([
+          client.from('categories').select('*').order('name'),
+          client.from('styles').select('*').order('name'),
+          client.from('patterns').select('*').order('name'),
+          client.from('materials').select('*').order('name')
+        ]);
+
+        _allCategories = catsRes.data || [];
+        _allStyles = stylesRes.data || [];
+        _allPatterns = patternsRes.data || [];
+
+        // Populate Categories
+        const catSelect = document.getElementById('prodCategory');
+        catSelect.innerHTML = '<option value="">Select Category</option>' + 
+          _allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+        // Populate Materials
+        const matSelect = document.getElementById('prodMaterial');
+        matSelect.innerHTML = '<option value="">Select Fabric Material</option>' + 
+          (materialsRes.data || []).map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+      } catch (err) {
+        console.error('Error loading dropdowns:', err);
+      }
+    }
+
+    function onCategoryChanged(catId) {
+      const styleSelect = document.getElementById('prodStyle');
+      const filteredStyles = _allStyles.filter(s => s.category_id === catId);
+      styleSelect.innerHTML = '<option value="">Select Style</option>' + 
+        filteredStyles.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+      document.getElementById('prodPattern').innerHTML = '<option value="">Select Pattern</option>';
+    }
+
+    function onStyleChanged(styleId) {
+      const patternSelect = document.getElementById('prodPattern');
+      const filteredPatterns = _allPatterns.filter(p => p.style_id === styleId);
+      patternSelect.innerHTML = '<option value="">Select Pattern (Optional)</option>' + 
+        filteredPatterns.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    }
+
+    async function handleProductSubmit(event) {
+      event.preventDefault();
+      const client = window.adminSupabase;
+      if (!client) return;
+
+      const saveBtn = document.getElementById('saveProductBtn');
+      const progressBox = document.getElementById('uploadProgressStatus');
+      
+      saveBtn.disabled = true;
+      progressBox.style.display = 'block';
+
+      try {
+        const name = document.getElementById('prodName').value.trim();
+        const slug = document.getElementById('prodSlug').value.trim();
+        const category_id = document.getElementById('prodCategory').value;
+        const style_id = document.getElementById('prodStyle').value;
+        const pattern_id = document.getElementById('prodPattern').value || null;
+        const material_id = document.getElementById('prodMaterial').value;
+        const price = parseFloat(document.getElementById('prodPrice').value);
+        const stock_quantity = parseInt(document.getElementById('prodStock').value, 10);
+        const description = document.getElementById('prodDesc').value.trim();
+
+        // 1. Collect all images (Files uploaded + URLs entered)
+        const uploadedUrls = [];
+
+        // Upload files in sequence/parallel to Supabase Storage
+        if (_selectedFiles.length > 0) {
+          for (let i = 0; i < _selectedFiles.length; i++) {
+            progressBox.textContent = `Uploading image ${i + 1} of ${_selectedFiles.length} to Supabase Storage…`;
+            const file = _selectedFiles[i];
+            const publicUrl = await window.uploadProductImage(file);
+            if (publicUrl) {
+              uploadedUrls.push(publicUrl);
+            }
+          }
+        }
+
+        // Parse external URLs if provided
+        const rawUrlsText = document.getElementById('prodImageUrls').value.trim();
+        if (rawUrlsText) {
+          const splitUrls = rawUrlsText.split(/[\n,]+/).map(u => u.trim()).filter(u => u.startsWith('http'));
+          uploadedUrls.push(...splitUrls);
+        }
+
+        // Fallback default image if none provided
+        if (uploadedUrls.length === 0) {
+          uploadedUrls.push('https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=800&q=80');
+        }
+
+        progressBox.textContent = 'Saving product and binding images to catalog…';
+
+        // 2. Insert Product
+        const { data: product, error: prodErr } = await client.from('products').insert({
+          name,
+          slug,
+          category_id,
+          style_id,
+          pattern_id,
+          material_id,
+          price,
+          stock_quantity,
+          description,
+          is_active: true
+        }).select('id').single();
+
+        if (prodErr) throw prodErr;
+
+        // 3. Batch Insert all Images into product_images table
+        if (product && product.id) {
+          const imageRows = uploadedUrls.map((url, index) => ({
+            product_id: product.id,
+            image_url: url,
+            alt_text: `${name} - View ${index + 1}`,
+            display_order: index + 1
+          }));
+
+          const { error: imgErr } = await client.from('product_images').insert(imageRows);
+          if (imgErr) console.warn('Product image rows insert notice:', imgErr);
+        }
+
+        window.showAdminToast(`Product "${name}" published with ${uploadedUrls.length} photos!`);
+        progressBox.textContent = 'Success! Redirecting to products catalog…';
+        
+        setTimeout(() => {
+          window.location.href = 'all-products.html';
+        }, 1200);
+      } catch (err) {
+        console.error(err);
+        window.showAdminToast('Error adding product: ' + err.message);
+        progressBox.style.display = 'none';
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Publish Product & Upload Images';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.adminSupabase) {
+        loadFormDropdowns();
+      } else {
+        document.addEventListener('adminSupabaseReady', loadFormDropdowns);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | Classic Collection Solapur Admin</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="admin-header">
+    <div class="header-left">
+      <span class="brand-title">Classic Collection</span>
+      <span class="brand-badge">Admin PWA</span>
+    </div>
+    <div class="header-right">
+      <div class="live-indicator">
+        <span class="live-dot"></span>
+        <span>CONNECTED</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGATION TABS -->
+  <nav class="admin-nav-tabs">
+    <a href="index.html" class="admin-nav-tab active">Dashboard</a>
+    <a href="orders.html" class="admin-nav-tab">Orders</a>
+    <a href="all-products.html" class="admin-nav-tab">All Products</a>
+    <a href="add-product.html" class="admin-nav-tab">+ Add Product</a>
+    <a href="categories.html" class="admin-nav-tab">Categories &amp; Styles</a>
+    <a href="materials.html" class="admin-nav-tab">Fabric Materials</a>
+    <a href="banners.html" class="admin-nav-tab">Hero Banners</a>
+    <a href="users.html" class="admin-nav-tab">Customers</a>
+  </nav>
+
+  <main class="admin-container">
+    <!-- STAT CARDS -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">TOTAL ORDERS</div>
+        <div class="stat-val" id="totalOrdersVal">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">TOTAL REVENUE</div>
+        <div class="stat-val" id="totalRevenueVal">₹0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">TOTAL PRODUCTS</div>
+        <div class="stat-val" id="totalProductsVal">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">FABRIC MATERIALS</div>
+        <div class="stat-val" id="totalMaterialsVal">0</div>
+      </div>
+    </div>
+
+    <!-- STORE DELIVERY & ANNOUNCEMENT SETTINGS -->
+    <div class="admin-card">
+      <div class="card-head">
+        <div>
+          <h3 class="card-title">STORE DELIVERY &amp; ANNOUNCEMENT SETTINGS</h3>
+          <p class="card-subtitle">Configure store-wide standard delivery fee, free shipping order threshold, and header announcement ticker.</p>
+        </div>
+        <span class="brand-badge" style="color: var(--accent-blue);">GLOBAL STORE CONFIG</span>
+      </div>
+
+      <form id="settingsForm" onsubmit="saveStoreSettings(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="settingDeliveryFee">Standard Delivery Fee (₹)</label>
+            <input type="number" id="settingDeliveryFee" class="form-control" placeholder="60" required min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="settingFreeShippingAbove">Free Delivery Above (₹)</label>
+            <input type="number" id="settingFreeShippingAbove" class="form-control" placeholder="999" required min="0">
+          </div>
+          <div class="form-group" style="grid-column: 1 / -1;">
+            <label class="form-label" for="settingAnnouncement">Header Announcement Ticker Message</label>
+            <input type="text" id="settingAnnouncement" class="form-control" placeholder="Classic Collection Solapur — Premium Cloth Materials | Fast Shipping Across India">
+          </div>
+        </div>
+        <button type="submit" class="btn-admin">Save &amp; Apply to Store</button>
+      </form>
+    </div>
+
+    <!-- RECENT ORDERS -->
+    <div class="admin-card">
+      <div class="card-head">
+        <div>
+          <h3 class="card-title">RECENT ORDERS</h3>
+          <p class="card-subtitle">Latest customer material orders from classicsolapur.com</p>
+        </div>
+        <a href="orders.html" class="btn-admin btn-ghost">View All Orders →</a>
+      </div>
+
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer</th>
+              <th>Phone</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="recentOrdersTbody">
+            <tr><td colspan="6" style="text-align:center; padding: 24px;">Loading recent orders…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.adminSupabase) {
+        window.loadDashboardStats();
+      } else {
+        document.addEventListener('adminSupabaseReady', () => {
+          window.loadDashboardStats();
+        });
+      }
+
+      // Register PWA service worker
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW failed:', err));
+      }
+    });
+  </script>
+</body>
+</html>

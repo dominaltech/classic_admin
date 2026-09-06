@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hero Banners | Classic Admin PWA</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</head>
+<body>
+  <header class="admin-header">
+    <div class="header-left">
+      <span class="brand-title">Classic Collection</span>
+      <span class="brand-badge">Admin PWA</span>
+    </div>
+    <div class="header-right">
+      <a href="index.html" class="btn-admin btn-ghost">← Dashboard</a>
+    </div>
+  </header>
+
+  <nav class="admin-nav-tabs">
+    <a href="index.html" class="admin-nav-tab">Dashboard</a>
+    <a href="orders.html" class="admin-nav-tab">Orders</a>
+    <a href="all-products.html" class="admin-nav-tab">All Products</a>
+    <a href="add-product.html" class="admin-nav-tab">+ Add Product</a>
+    <a href="categories.html" class="admin-nav-tab">Categories &amp; Styles</a>
+    <a href="materials.html" class="admin-nav-tab">Fabric Materials</a>
+    <a href="banners.html" class="admin-nav-tab active">Hero Banners</a>
+    <a href="users.html" class="admin-nav-tab">Customers</a>
+  </nav>
+
+  <main class="admin-container">
+    <div class="admin-card">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">STORE HERO BANNERS</h2>
+          <p class="card-subtitle">Manage homepage carousel slides, promotional announcements, and collection links for classicsolapur.com.</p>
+        </div>
+      </div>
+
+      <!-- ADD NEW BANNER FORM -->
+      <form id="bannerForm" onsubmit="addNewBanner(event)" style="background: var(--bg-surface); border: 1px solid var(--border); padding: 20px; border-radius: var(--radius-sm); margin-bottom: 30px;">
+        <h3 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; color: #ffffff;">+ Add New Hero Banner</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="bannerTitle">Banner Title *</label>
+            <input type="text" id="bannerTitle" class="form-control" placeholder="e.g. LUXURY KHADI & LINEN" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="bannerSubtitle">Subtitle / Tagline</label>
+            <input type="text" id="bannerSubtitle" class="form-control" placeholder="e.g. Unstitched pure festive textiles for men">
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="bannerImageUrl">Banner Image URL *</label>
+            <input type="url" id="bannerImageUrl" class="form-control" placeholder="https://images.unsplash.com/... or upload below" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="bannerFileInput">Or Upload Banner Image</label>
+            <input type="file" id="bannerFileInput" class="form-control" accept="image/*" onchange="handleBannerUpload(this)">
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="bannerLinkUrl">Target Link</label>
+            <input type="text" id="bannerLinkUrl" class="form-control" placeholder="/pages/listing.html?style=formal" value="/pages/listing.html">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="bannerOrder">Display Order</label>
+            <input type="number" id="bannerOrder" class="form-control" value="1" min="1" step="1">
+          </div>
+        </div>
+
+        <button type="submit" id="saveBannerBtn" class="btn-admin" style="margin-top: 12px;">Publish Banner to Homepage</button>
+      </form>
+
+      <!-- BANNERS LIST -->
+      <div>
+        <h3 style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 16px; color: #ffffff;">Active Homepage Carousel</h3>
+        <div id="bannersList">
+          <p style="padding: 24px; color: var(--text-muted); text-align: center;">Loading hero banners…</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function handleBannerUpload(input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      const saveBtn = document.getElementById('saveBannerBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Uploading banner image…';
+      try {
+        const url = await window.uploadProductImage(file);
+        if (url) {
+          document.getElementById('bannerImageUrl').value = url;
+          window.showAdminToast('Banner image uploaded successfully!');
+        }
+      } catch (err) {
+        window.showAdminToast('Failed to upload image: ' + err.message);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Publish Banner to Homepage';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.adminSupabase) {
+        window.loadBanners();
+      } else {
+        document.addEventListener('adminSupabaseReady', () => {
+          window.loadBanners();
+        });
+      }
+    });
+  </script>
+</body>
+</html>

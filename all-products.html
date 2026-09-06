@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Products Catalog | Classic Admin PWA</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</head>
+<body>
+  <header class="admin-header">
+    <div class="header-left">
+      <span class="brand-title">Classic Collection</span>
+      <span class="brand-badge">Admin PWA</span>
+    </div>
+    <div class="header-right">
+      <a href="add-product.html" class="btn-admin">+ Add New Product</a>
+    </div>
+  </header>
+
+  <nav class="admin-nav-tabs">
+    <a href="index.html" class="admin-nav-tab">Dashboard</a>
+    <a href="orders.html" class="admin-nav-tab">Orders</a>
+    <a href="all-products.html" class="admin-nav-tab active">All Products</a>
+    <a href="add-product.html" class="admin-nav-tab">+ Add Product</a>
+    <a href="categories.html" class="admin-nav-tab">Categories &amp; Styles</a>
+    <a href="materials.html" class="admin-nav-tab">Fabric Materials</a>
+    <a href="banners.html" class="admin-nav-tab">Hero Banners</a>
+    <a href="users.html" class="admin-nav-tab">Customers</a>
+  </nav>
+
+  <main class="admin-container">
+    <div class="admin-card">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">ALL CLOTH MATERIALS &amp; PRODUCTS</h2>
+          <p class="card-subtitle">Manage stock quantities, prices, active status, or remove items from the catalog.</p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Product Name</th>
+              <th>Category / Style</th>
+              <th>Material</th>
+              <th>Price</th>
+              <th>Stock Qty</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="allProductsTbody">
+            <tr><td colspan="7" style="text-align:center; padding: 24px;">Loading products…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.adminSupabase) {
+        window.loadAllProducts();
+      } else {
+        document.addEventListener('adminSupabaseReady', () => {
+          window.loadAllProducts();
+        });
+      }
+    });
+  </script>
+</body>
+</html>

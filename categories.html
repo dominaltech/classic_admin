@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Categories &amp; Styles Taxonomy | Classic Admin PWA</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="admin.js"></script>
+</head>
+<body>
+  <header class="admin-header">
+    <div class="header-left">
+      <span class="brand-title">Classic Collection</span>
+      <span class="brand-badge">Admin PWA</span>
+    </div>
+    <div class="header-right">
+      <button class="btn-admin" onclick="promptAddCategory()">+ Add Category</button>
+    </div>
+  </header>
+
+  <nav class="admin-nav-tabs">
+    <a href="index.html" class="admin-nav-tab">Dashboard</a>
+    <a href="orders.html" class="admin-nav-tab">Orders</a>
+    <a href="all-products.html" class="admin-nav-tab">All Products</a>
+    <a href="add-product.html" class="admin-nav-tab">+ Add Product</a>
+    <a href="categories.html" class="admin-nav-tab active">Categories &amp; Styles</a>
+    <a href="materials.html" class="admin-nav-tab">Fabric Materials</a>
+    <a href="banners.html" class="admin-nav-tab">Hero Banners</a>
+    <a href="users.html" class="admin-nav-tab">Customers</a>
+  </nav>
+
+  <main class="admin-container">
+    <div class="admin-card">
+      <div class="card-head">
+        <div>
+          <h2 class="card-title">CATALOG TAXONOMY HIERARCHY</h2>
+          <p class="card-subtitle">Manage Category → Style → Pattern tree (e.g. Men's → Formal → Whites, Plain, Stripes, Checks, Prints).</p>
+        </div>
+      </div>
+
+      <div id="taxonomyTree">
+        <p style="padding: 24px; color: var(--text-muted); text-align: center;">Loading taxonomy tree…</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.adminSupabase) {
+        window.loadTaxonomy();
+      } else {
+        document.addEventListener('adminSupabaseReady', () => {
+          window.loadTaxonomy();
+        });
+      }
+    });
+  </script>
+</body>
+</html>
