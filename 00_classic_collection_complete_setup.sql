@@ -1,10 +1,12 @@
-﻿-- ==============================================================================
+-- ==============================================================================
 -- CLASSIC COLLECTION SOLAPUR - COMPLETE SUPABASE DATABASE SETUP
 -- Brand: Classic Collection Solapur (classicsolapur.com)
 -- Domain: Premium Cloth Materials (Suiting, Shirting, Cotton, Linen, Khadi, Silk)
 -- ==============================================================================
 
-CREATE EXTENSION IF NOT EXISTS uuid-ossp;
+-- Enable UUID extension safely with proper quotes
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 1. PROFILES
 CREATE TABLE IF NOT EXISTS public.profiles (
@@ -21,7 +23,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 
 -- 2. CATEGORIES / MATERIAL TYPES
 CREATE TABLE IF NOT EXISTS public.categories (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL UNIQUE,
     slug TEXT NOT NULL UNIQUE,
     description TEXT,
@@ -34,7 +36,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
 
 -- 3. PRODUCTS (CLOTH MATERIALS)
 CREATE TABLE IF NOT EXISTS public.products (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
     name TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
@@ -52,7 +54,7 @@ CREATE TABLE IF NOT EXISTS public.products (
 
 -- 4. PRODUCT VARIANTS (FABRIC CUT LENGTHS / SIZES)
 CREATE TABLE IF NOT EXISTS public.product_variants (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
     size TEXT NOT NULL, -- e.g. 1.2M, 1.6M, 2.5M, 3.0M, Standard Cut
     color TEXT DEFAULT 'Default',
@@ -64,7 +66,7 @@ CREATE TABLE IF NOT EXISTS public.product_variants (
 
 -- 5. PRODUCT GALLERY IMAGES
 CREATE TABLE IF NOT EXISTS public.product_images (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
     image_url TEXT NOT NULL,
     display_order INT DEFAULT 0,
@@ -73,7 +75,7 @@ CREATE TABLE IF NOT EXISTS public.product_images (
 
 -- 6. HERO BANNERS (HOMEPAGE BANNER SLIDER)
 CREATE TABLE IF NOT EXISTS public.banners (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
     subtitle TEXT,
     image_url TEXT NOT NULL,
@@ -87,7 +89,7 @@ CREATE TABLE IF NOT EXISTS public.banners (
 
 -- 7. COUPONS
 CREATE TABLE IF NOT EXISTS public.coupons (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code TEXT NOT NULL UNIQUE,
     discount_type TEXT DEFAULT 'percentage' CHECK (discount_type IN ('percentage', 'fixed')),
     discount_value NUMERIC(10, 2) NOT NULL,
@@ -100,7 +102,7 @@ CREATE TABLE IF NOT EXISTS public.coupons (
 
 -- 8. ORDERS
 CREATE TABLE IF NOT EXISTS public.orders (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_number TEXT NOT NULL UNIQUE,
     user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
     customer_name TEXT NOT NULL,
@@ -122,7 +124,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
 
 -- 9. ORDER ITEMS
 CREATE TABLE IF NOT EXISTS public.order_items (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
     product_id UUID REFERENCES public.products(id) ON DELETE SET NULL,
     product_name TEXT NOT NULL,
@@ -137,7 +139,7 @@ CREATE TABLE IF NOT EXISTS public.order_items (
 
 -- 10. PAYMENTS
 CREATE TABLE IF NOT EXISTS public.payments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID REFERENCES public.orders(id) ON DELETE SET NULL,
     cashfree_order_id TEXT NOT NULL,
     cashfree_payment_id TEXT,
@@ -150,7 +152,7 @@ CREATE TABLE IF NOT EXISTS public.payments (
 
 -- 11. ADMIN PWA PUSH SUBSCRIPTIONS
 CREATE TABLE IF NOT EXISTS public.admin_push_subscriptions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_agent TEXT,
     endpoint TEXT NOT NULL UNIQUE,
     keys JSONB NOT NULL,
@@ -160,7 +162,7 @@ CREATE TABLE IF NOT EXISTS public.admin_push_subscriptions (
 
 -- 12. STORE SETTINGS
 CREATE TABLE IF NOT EXISTS public.store_settings (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     delivery_fee NUMERIC(10, 2) DEFAULT 60.00,
     free_shipping_above NUMERIC(10, 2) DEFAULT 999.00,
     created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -182,32 +184,32 @@ ALTER TABLE public.admin_push_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.store_settings ENABLE ROW LEVEL SECURITY;
 
 -- CLEAN EXISTING POLICIES
-DROP POLICY IF EXISTS Public Full Profiles ON public.profiles;
-DROP POLICY IF EXISTS Public Full Categories ON public.categories;
-DROP POLICY IF EXISTS Public Full Products ON public.products;
-DROP POLICY IF EXISTS Public Full Product Variants ON public.product_variants;
-DROP POLICY IF EXISTS Public Full Product Images ON public.product_images;
-DROP POLICY IF EXISTS Public Full Banners ON public.banners;
-DROP POLICY IF EXISTS Public Full Coupons ON public.coupons;
-DROP POLICY IF EXISTS Public Full Orders ON public.orders;
-DROP POLICY IF EXISTS Public Full Order Items ON public.order_items;
-DROP POLICY IF EXISTS Public Full Payments ON public.payments;
-DROP POLICY IF EXISTS Public Full Push Subscriptions ON public.admin_push_subscriptions;
-DROP POLICY IF EXISTS Public Full Store Settings ON public.store_settings;
+DROP POLICY IF EXISTS "Public Full Profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Public Full Categories" ON public.categories;
+DROP POLICY IF EXISTS "Public Full Products" ON public.products;
+DROP POLICY IF EXISTS "Public Full Product Variants" ON public.product_variants;
+DROP POLICY IF EXISTS "Public Full Product Images" ON public.product_images;
+DROP POLICY IF EXISTS "Public Full Banners" ON public.banners;
+DROP POLICY IF EXISTS "Public Full Coupons" ON public.coupons;
+DROP POLICY IF EXISTS "Public Full Orders" ON public.orders;
+DROP POLICY IF EXISTS "Public Full Order Items" ON public.order_items;
+DROP POLICY IF EXISTS "Public Full Payments" ON public.payments;
+DROP POLICY IF EXISTS "Public Full Push Subscriptions" ON public.admin_push_subscriptions;
+DROP POLICY IF EXISTS "Public Full Store Settings" ON public.store_settings;
 
 -- POLICIES ALLOWING PUBLIC READ & ADMIN FULL ACCESS
-CREATE POLICY Public Full Profiles ON public.profiles FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY Public Full Categories ON public.categories FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY Public Full Products ON public.products FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY Public Full Product Variants ON public.product_variants FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY Public Full Product Images ON public.product_images FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY Public Full Banners ON public.banners FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY Public Full Coupons ON public.coupons FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY Public Full Orders ON public.orders FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY Public Full Order Items ON public.order_items FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY Public Full Payments ON public.payments FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY Public Full Push Subscriptions ON public.admin_push_subscriptions FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY Public Full Store Settings ON public.store_settings FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Profiles" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Categories" ON public.categories FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Products" ON public.products FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Product Variants" ON public.product_variants FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Product Images" ON public.product_images FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Banners" ON public.banners FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Coupons" ON public.coupons FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Orders" ON public.orders FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Order Items" ON public.order_items FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Payments" ON public.payments FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Push Subscriptions" ON public.admin_push_subscriptions FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Store Settings" ON public.store_settings FOR ALL USING (true) WITH CHECK (true);
 
 -- SEED DATA: CLOTH MATERIAL CATEGORIES
 INSERT INTO public.categories (id, name, slug, description, image_url, display_order)
