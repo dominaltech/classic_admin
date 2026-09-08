@@ -1,801 +1,803 @@
-// CLASSIC PWA ADMIN — CORE SYSTEM CONTROLLER
-// Classic Collection Solapur (classicsolapur.com)
+// CLASSIC COLLECTION SOLAPUR ADMIN DASHBOARD CORE JAVASCRIPT SYSTEM
 
-(function () {
+(function() {
   'use strict';
 
-  // Helper: Get initialized Supabase client
-  function getClient() {
-    return window.adminSupabase || (typeof window.initAdminSupabase === 'function' ? window.initAdminSupabase() : null);
+  // 1. EMBEDDED SUPABASE CREDENTIALS
+  const SUPABASE_URL = "https://mizbiarhnxzrpfuodqnj.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1pemJpYXJobnh6cnBmdW9kcW5qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0OTg3NTYsImV4cCI6MjEwNDA3NDc1Nn0.plMkDTZJ7wy2D6yLWtRmJU_gvJ9z-zZYXumbOlWHCrU";
+
+  window.UR_CONFIG = window.UR_CONFIG || {};
+  window.UR_CONFIG.SUPABASE_URL = SUPABASE_URL;
+  window.UR_CONFIG.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
+  window.UR_CONFIG.BRAND_NAME = "Classic Collection Solapur";
+  window.CLASSIC_CONFIG = window.UR_CONFIG;
+
+  window.urSbClient = null;
+  window.adminSupabase = null;
+
+  function createAdminSupabaseClient() {
+    if (window.adminSupabase) return window.adminSupabase;
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      try {
+        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.urSbClient = client;
+        window.adminSupabase = client;
+        console.log('Admin Supabase client initialized successfully');
+        return client;
+      } catch (e) {
+        console.error('Error creating admin Supabase client:', e);
+      }
+    }
+    return null;
   }
 
-  // Toast notification
-  window.showAdminToast = function (message) {
-    let toast = document.querySelector('#adminToast');
-    if (!toast) {
-      toast = document.createElement('div');
-      toast.id = 'adminToast';
-      toast.className = 'admin-toast';
-      document.body.appendChild(toast);
+  // Synchronous attempt
+  createAdminSupabaseClient();
+
+  // Retry loop for CDN script evaluation
+  let retryCount = 0;
+  const initInterval = setInterval(function() {
+    if (createAdminSupabaseClient() || retryCount > 20) {
+      clearInterval(initInterval);
+      document.dispatchEvent(new CustomEvent('adminSupabaseReady'));
     }
-    toast.textContent = message;
-    toast.classList.add('show');
-    setTimeout(() => {
-      toast.classList.remove('show');
-    }, 3200);
-  };
+    retryCount++;
+  }, 100);
 
-  // Modal helpers
-  window.openAdminModal = function (id) {
-    const modal = document.getElementById(id);
-    if (modal) modal.classList.add('active');
-  };
+  // 2. VAPID BASE64 HELPER CONVERTER
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
 
-  window.closeAdminModal = function (id) {
-    const modal = document.getElementById(id);
-    if (modal) modal.classList.remove('active');
-  };
-
-  // Auth gate check
-  window.checkAdminAuth = async function () {
-    const client = getClient();
-    if (!client) return null;
+  // 3. ALLOW PUSH NOTIFICATIONS HANDLER FOR ADMIN SETTINGS (REGISTER DEVICE TO SUPABASE)
+  window.requestAdminNotificationPermission = async function() {
+    if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+      window.adminToast('Web Push Notifications not supported in this browser.');
+      return;
+    }
 
     try {
-      const { data: { session } } = await client.auth.getSession();
-      if (!session || !session.user) {
-        console.warn('No active admin session found.');
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        const reg = await navigator.serviceWorker.ready;
+        const vapidPublicKey = window.UR_CONFIG.VAPID_PUBLIC_KEY;
+
+        const sub = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+        });
+
+        const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+        if (client) {
+          await client.from('admin_push_subscriptions').upsert({
+            user_agent: navigator.userAgent,
+            endpoint: sub.endpoint,
+            keys: JSON.parse(JSON.stringify(sub.toJSON().keys)),
+            updated_at: new Date()
+          }, { onConflict: 'endpoint' });
+        }
+
+        window.adminToast('Order Notifications Allowed & Device Registered!');
+        const btn = document.getElementById('pushNotifyBtn');
+        if (btn) {
+          btn.textContent = 'NOTIFICATIONS ENABLED ✓';
+          btn.style.background = '#2b9348';
+        }
+      } else {
+        window.adminToast('Notification permission denied.');
+      }
+    } catch(err) {
+      console.error(err);
+      window.adminToast('Notification registration error: ' + err.message);
+    }
+  };
+
+  // 4. FETCH ADMIN USERS (PROFILES TABLE QUERY WITH ALL COLUMNS)
+  window.fetchAdminUsers = async function() {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) {
+      return { data: [], error: { message: 'Supabase client not initialized' } };
+    }
+    try {
+      const { data, error } = await client
+        .from('profiles')
+        .select('id, full_name, phone, role, default_address, address, pincode, created_at, updated_at')
+        .order('created_at', { ascending: false });
+      return { data: data || [], error };
+    } catch (err) {
+      console.error('fetchAdminUsers error:', err);
+      return { data: [], error: err };
+    }
+  };
+
+  // 5. FETCH ADMIN PRODUCTS ROUTINE
+  window.fetchAdminProducts = async function() {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) {
+      return { data: [], error: { message: 'Supabase client not initialized' } };
+    }
+    try {
+      const { data, error } = await client
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+      return { data: data || [], error };
+    } catch (err) {
+      console.error('fetchAdminProducts error:', err);
+      return { data: [], error: err };
+    }
+  };
+
+  // 6. FETCH ADMIN CATEGORIES ROUTINE
+  window.fetchAdminCategories = async function() {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) {
+      return { data: [], error: { message: 'Supabase client not initialized' } };
+    }
+    try {
+      const { data, error } = await client
+        .from('categories')
+        .select('*')
+        .order('display_order', { ascending: true });
+      return { data: data || [], error };
+    } catch (err) {
+      console.error('fetchAdminCategories error:', err);
+      return { data: [], error: err };
+    }
+  };
+
+  // 7. FETCH ADMIN ORDERS ROUTINE WITH ORDER ITEMS (PRODUCTS & SIZES)
+  window.fetchAdminOrders = async function() {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) {
+      return { data: [], error: { message: 'Supabase client not initialized' } };
+    }
+    try {
+      let { data, error } = await client
+        .from('orders')
+        .select('*, order_items(*)')
+        .order('created_at', { ascending: false });
+
+      // Fallback: If relation query encounters any issue, fetch orders & order_items separately and merge
+      if (error || !data) {
+        console.warn('Nested order_items query failed or returned error, executing fallback merge query:', error);
+        const ordersRes = await client
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (ordersRes.data) {
+          const itemsRes = await client.from('order_items').select('*');
+          const items = itemsRes.data || [];
+          data = ordersRes.data.map(order => ({
+            ...order,
+            order_items: items.filter(item => item.order_id === order.id)
+          }));
+          error = null;
+        } else {
+          return { data: [], error: ordersRes.error };
+        }
+      }
+      return { data: data || [], error };
+    } catch (err) {
+      console.error('fetchAdminOrders error:', err);
+      return { data: [], error: err };
+    }
+  };
+
+  window.updateAdminOrderStatus = async function(orderId, status) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { error: { message: 'Supabase not initialized' } };
+    try {
+      const { data, error } = await client
+        .from('orders')
+        .update({ order_status: status, updated_at: new Date() })
+        .eq('id', orderId)
+        .select()
+        .single();
+      return { data, error };
+    } catch (err) {
+      return { error: err };
+    }
+  };
+
+  window.updateAdminOrderTracking = async function(orderId, courierName, trackingNumber) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { error: { message: 'Supabase not initialized' } };
+    try {
+      const { data, error } = await client
+        .from('orders')
+        .update({ 
+          courier_name: courierName || null, 
+          tracking_number: trackingNumber || null,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', orderId)
+        .select()
+        .single();
+      return { data, error };
+    } catch (err) {
+      return { error: err };
+    }
+  };
+
+  window.updateAdminOrderDetails = async function(orderId, updatePayload) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { error: { message: 'Supabase not initialized' } };
+    try {
+      const { data, error } = await client
+        .from('orders')
+        .update({ ...updatePayload, updated_at: new Date().toISOString() })
+        .eq('id', orderId)
+        .select()
+        .single();
+      return { data, error };
+    } catch (err) {
+      return { error: err };
+    }
+  };
+
+  window.deleteAdminOrder = async function(orderId) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { error: { message: 'Supabase not initialized' } };
+    try {
+      // 1. Delete associated order_items and payments if present
+      await client.from('order_items').delete().eq('order_id', orderId);
+      await client.from('payments').delete().eq('order_id', orderId);
+
+      // 2. Delete the order record
+      const { data, error } = await client
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
+      return { data, error };
+    } catch (err) {
+      return { error: err };
+    }
+  };
+
+  // 8. COUPONS & EVENT BANNERS MANAGEMENT ROUTINES
+  window.fetchAdminCoupons = async function() {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { data: [], error: { message: 'Supabase not initialized' } };
+    try {
+      const { data, error } = await client
+        .from('coupons')
+        .select('*')
+        .order('created_at', { ascending: false });
+      return { data: data || [], error };
+    } catch (err) {
+      console.error('fetchAdminCoupons error:', err);
+      return { data: [], error: err };
+    }
+  };
+
+  window.saveAdminCoupon = async function(couponData) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { error: { message: 'Supabase not initialized' } };
+    try {
+      let res;
+      if (couponData.id) {
+        res = await client
+          .from('coupons')
+          .update({ ...couponData, updated_at: new Date().toISOString() })
+          .eq('id', couponData.id)
+          .select()
+          .single();
+      } else {
+        res = await client
+          .from('coupons')
+          .insert([couponData])
+          .select()
+          .single();
+      }
+      return res;
+    } catch (err) {
+      return { error: err };
+    }
+  };
+
+  window.deleteAdminCoupon = async function(couponId) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { error: { message: 'Supabase not initialized' } };
+    try {
+      const { data, error } = await client
+        .from('coupons')
+        .delete()
+        .eq('id', couponId);
+      return { data, error };
+    } catch (err) {
+      return { error: err };
+    }
+  };
+
+  window.toggleAdminCouponField = async function(couponId, fieldName, currentVal) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { error: { message: 'Supabase not initialized' } };
+    try {
+      const { data, error } = await client
+        .from('coupons')
+        .update({ [fieldName]: !currentVal, updated_at: new Date().toISOString() })
+        .eq('id', couponId)
+        .select()
+        .single();
+      return { data, error };
+    } catch (err) {
+      return { error: err };
+    }
+  };
+
+  // 9. FETCH PRODUCT GALLERY IMAGES
+  window.fetchProductImages = async function(productId) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client || !productId) return { data: [], error: null };
+    try {
+      const { data, error } = await client
+        .from('product_images')
+        .select('*')
+        .eq('product_id', productId)
+        .order('display_order', { ascending: true });
+      return { data: data || [], error };
+    } catch (err) {
+      console.error('fetchProductImages error:', err);
+      return { data: [], error: err };
+    }
+  };
+
+  // 9. TOAST UTILITY
+  window.adminToast = function(msg, isError = false) {
+    let container = document.getElementById('adminToastContainer');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'adminToastContainer';
+      container.style.cssText = 'position:fixed; top:20px; right:20px; z-index:99999; display:flex; flex-direction:column; gap:10px; max-width:380px;';
+      document.body.appendChild(container);
+    }
+    let toast = document.createElement('div');
+    const bg = isError ? '#d90429' : '#111';
+    toast.style.cssText = `background:${bg}; color:#fff; padding:12px 20px; border-radius:6px; font-weight:600; font-size:0.85rem; box-shadow:0 4px 16px rgba(0,0,0,0.2); animation:fadeIn 0.3s ease;`;
+    toast.textContent = msg;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 4500);
+  };
+
+  // 10. DRAWER CONTROLS
+  window.openDrawer = function() {
+    let drawer = document.getElementById('adminDrawer');
+    if (drawer) drawer.classList.add('active');
+  };
+  window.closeDrawer = function() {
+    let drawer = document.getElementById('adminDrawer');
+    if (drawer) drawer.classList.remove('active');
+  };
+
+  // 10.5 CLIENT-SIDE HIGH-PERFORMANCE CANVAS WEBP/JPEG COMPRESSION ENGINE
+  window.compressImageFile = async function(file, options = {}) {
+    if (!file || !(file instanceof File) || !file.type.startsWith('image/')) {
+      return file;
+    }
+
+    // Configurable targets (defaults: max dimension 1200px for products, 1920px for banners, quality 0.82)
+    const maxWidth = options.maxWidth || (options.isBanner ? 1920 : 1200);
+    const maxHeight = options.maxHeight || (options.isBanner ? 1000 : 1500);
+    const quality = options.quality || 0.82;
+
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          let width = img.width;
+          let height = img.height;
+
+          // Scale down proportionally if larger than target resolution
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+
+          // Enable high-quality image smoothing
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Determine target MIME type (WebP by default with progressive fallback)
+          let targetType = 'image/webp';
+          let extension = 'webp';
+          
+          canvas.toBlob(function(blob) {
+            if (!blob) {
+              console.warn('Canvas blob creation failed, falling back to original file');
+              return resolve(file);
+            }
+
+            // Create compressed File object with proper name and extension
+            const originalName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+            const compressedFile = new File([blob], `${originalName}.${extension}`, {
+              type: targetType,
+              lastModified: Date.now()
+            });
+
+            console.log(`[Image Compressor] Original: ${(file.size / 1024).toFixed(1)} KB -> Compressed: ${(compressedFile.size / 1024).toFixed(1)} KB (Saved ${(((file.size - compressedFile.size)/file.size)*100).toFixed(1)}%)`);
+            resolve(compressedFile);
+          }, targetType, quality);
+        };
+        img.onerror = function() {
+          console.warn('Error loading image for compression, using original');
+          resolve(file);
+        };
+        img.src = event.target.result;
+      };
+      reader.onerror = function() {
+        console.warn('FileReader error, using original file');
+        resolve(file);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // 11. ROBUST SUPABASE STORAGE UPLOADER WITH AUTOMATIC WEBP COMPRESSION & IMMUTABLE CDN CACHING
+  window.uploadFileToStorage = async function(fileOrInput, bucket = 'product-images', folder = 'products', options = {}) {
+    let file = null;
+    if (fileOrInput instanceof File) {
+      file = fileOrInput;
+    } else if (fileOrInput && fileOrInput.files && fileOrInput.files.length > 0) {
+      file = fileOrInput.files[0];
+    }
+
+    if (!file) return null;
+
+    // Automatic Client-Side Compression before network transfer
+    const isBanner = folder === 'banners' || folder === 'categories';
+    const compressedFile = await window.compressImageFile(file, { isBanner, ...options });
+    file = compressedFile || file;
+
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) {
+      console.warn('Supabase client unavailable. Falling back to default asset.');
+      return 'images/logo.jpg';
+    }
+
+    // Clean file extension & safe filename
+    const originalExt = (file.name.split('.').pop() || 'webp').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanExt = originalExt.length > 0 ? originalExt : 'webp';
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    const sanitizedName = file.name.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 30);
+    const filePath = `${folder}/${timestamp}_${randomStr}_${sanitizedName}.${cleanExt}`;
+
+    try {
+      const { data, error: uploadError } = await client.storage
+        .from(bucket)
+        .upload(filePath, file, {
+          cacheControl: '31536000, public, immutable',
+          upsert: true,
+          contentType: file.type || 'image/webp'
+        });
+
+      if (uploadError) {
+        console.error(`Storage upload error (${bucket}):`, uploadError);
+        window.adminToast(`Storage Upload Error: ${uploadError.message || 'Check bucket & RLS settings'}`, true);
         return null;
       }
 
-      // Verify is_admin on profile
-      const { data: profile } = await client
-        .from('profiles')
-        .select('id, name, is_admin')
-        .eq('id', session.user.id)
-        .maybeSingle();
+      const { data: publicUrlData } = client.storage
+        .from(bucket)
+        .getPublicUrl(filePath);
 
-      return { user: session.user, profile };
+      if (publicUrlData && publicUrlData.publicUrl) {
+        return publicUrlData.publicUrl;
+      }
+      return null;
     } catch (err) {
-      console.error('Admin auth check failed:', err);
+      console.error('Storage Exception:', err);
+      window.adminToast(`Upload failed: ${err.message || 'Network error'}`, true);
       return null;
     }
   };
 
-  // Direct Supabase Storage Image Upload
-  window.uploadProductImage = async function (file) {
-    const client = getClient();
-    if (!client) throw new Error('Supabase client not initialized');
+  // Backwards compatibility alias
+  window.uploadProductImage = async function(fileInput) {
+    const url = await window.uploadFileToStorage(fileInput, 'product-images', 'products');
+    return url || 'images/logo.jpg';
+  };
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-    const filePath = `products/${fileName}`;
+  // 12. MULTI-FILE UPLOADER FOR UNLIMITED GALLERY & BULK UPLOADS
+  window.uploadMultipleFiles = async function(fileList, bucket = 'product-images', folder = 'products', onProgress = null) {
+    const files = Array.from(fileList || []);
+    if (files.length === 0) return [];
 
-    const { error: uploadError } = await client.storage
-      .from('product-images')
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: false
+    const results = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      if (onProgress && typeof onProgress === 'function') {
+        onProgress(i + 1, files.length, file.name);
+      }
+      const url = await window.uploadFileToStorage(file, bucket, folder);
+      results.push({
+        file: file,
+        fileName: file.name,
+        url: url,
+        success: !!url
       });
-
-    if (uploadError) {
-      throw uploadError;
     }
-
-    const { data: { publicUrl } } = client.storage
-      .from('product-images')
-      .getPublicUrl(filePath);
-
-    return publicUrl;
+    return results;
   };
 
-  // ==========================================
-  // 1. DASHBOARD OVERVIEW & ANALYTICS
-  // ==========================================
-  window.loadDashboardStats = async function () {
-    const client = getClient();
-    if (!client) return;
+  // 13. SYNC / SAVE PRODUCT GALLERY IMAGES TO DATABASE
+  window.saveProductGalleryImages = async function(productId, imageUrls) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client || !productId || !imageUrls || imageUrls.length === 0) return { count: 0 };
 
     try {
-      // 1. Orders and Revenue
-      const { data: orders, error: ordersErr } = await client.from('orders').select('id, total_amount, status, created_at');
-      if (!ordersErr && orders) {
-        document.getElementById('totalOrdersVal').textContent = orders.length;
-        const totalRevenue = orders
-          .filter(o => o.status !== 'cancelled')
-          .reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
-        document.getElementById('totalRevenueVal').textContent = `₹${totalRevenue.toLocaleString('en-IN')}`;
-      }
+      const rows = imageUrls.map((url, idx) => ({
+        product_id: productId,
+        image_url: url,
+        display_order: idx + 1,
+        created_at: new Date()
+      }));
 
-      // 2. Products count
-      const { count: productsCount } = await client.from('products').select('*', { count: 'exact', head: true });
-      if (document.getElementById('totalProductsVal')) {
-        document.getElementById('totalProductsVal').textContent = productsCount || 0;
-      }
+      const { data, error } = await client
+        .from('product_images')
+        .insert(rows);
 
-      // 3. Materials count
-      const { count: materialsCount } = await client.from('materials').select('*', { count: 'exact', head: true });
-      if (document.getElementById('totalMaterialsVal')) {
-        document.getElementById('totalMaterialsVal').textContent = materialsCount || 0;
+      if (error) {
+        console.error('Error inserting product gallery images:', error);
+        return { error };
       }
+      return { count: rows.length, data };
+    } catch (err) {
+      console.error('saveProductGalleryImages exception:', err);
+      return { error: err };
+    }
+  };
 
-      // 4. Load Delivery Settings
-      const { data: settings } = await client.from('store_settings').select('*');
-      if (settings) {
-        settings.forEach(item => {
-          if (item.key === 'standard_shipping_fee' && document.getElementById('settingDeliveryFee')) {
-            document.getElementById('settingDeliveryFee').value = item.value;
-          }
-          if (item.key === 'free_shipping_above' && document.getElementById('settingFreeShippingAbove')) {
-            document.getElementById('settingFreeShippingAbove').value = item.value;
-          }
-          if (item.key === 'announcement_text' && document.getElementById('settingAnnouncement')) {
-            document.getElementById('settingAnnouncement').value = item.value;
-          }
-        });
-      }
+  // 14. STORE DELIVERY & SHIPPING SETTINGS MANAGEMENT
+  window.fetchStoreDeliverySettings = async function() {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { delivery_fee: 60, free_shipping_above: 999 };
 
-      // 5. Recent orders
-      const { data: recentOrders } = await client
-        .from('orders')
+    try {
+      const { data, error } = await client
+        .from('store_settings')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
+        .eq('id', 'default')
+        .maybeSingle();
 
-      const recentTbody = document.getElementById('recentOrdersTbody');
-      if (recentTbody && recentOrders) {
-        if (recentOrders.length === 0) {
-          recentTbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color: var(--text-muted); padding: 24px;">No customer orders placed yet.</td></tr>`;
-        } else {
-          recentTbody.innerHTML = recentOrders.map(o => `
-            <tr>
-              <td><strong>#${o.id.substring(0, 8)}</strong></td>
-              <td>${o.shipping_name || 'Customer'}</td>
-              <td>${o.shipping_phone || '-'}</td>
-              <td>₹${Number(o.total_amount).toLocaleString('en-IN')}</td>
-              <td><span class="pill pill-${o.status}">${o.status}</span></td>
-              <td>${new Date(o.created_at).toLocaleDateString()}</td>
-            </tr>
-          `).join('');
-        }
+      if (error || !data) {
+        return { delivery_fee: 60, free_shipping_above: 999 };
       }
-    } catch (e) {
-      console.error('Error loading dashboard stats:', e);
+      return data;
+    } catch(err) {
+      console.error('fetchStoreDeliverySettings error:', err);
+      return { delivery_fee: 60, free_shipping_above: 999 };
     }
   };
 
-  // Save Store Delivery Settings
-  window.saveStoreSettings = async function (event) {
-    if (event) event.preventDefault();
-    const client = getClient();
-    if (!client) return;
-
-    const deliveryFee = document.getElementById('settingDeliveryFee')?.value || '60';
-    const freeAbove = document.getElementById('settingFreeShippingAbove')?.value || '999';
-    const announcement = document.getElementById('settingAnnouncement')?.value || '';
-
-    try {
-      await client.from('store_settings').upsert([
-        { key: 'standard_shipping_fee', value: deliveryFee, updated_at: new Date() },
-        { key: 'free_shipping_above', value: freeAbove, updated_at: new Date() },
-        { key: 'announcement_text', value: announcement, updated_at: new Date() }
-      ]);
-      window.showAdminToast('Store settings saved & applied live to website!');
-    } catch (err) {
-      console.error(err);
-      window.showAdminToast('Failed to save settings: ' + err.message);
+  window.saveStoreDeliverySettings = async function(deliveryFee, freeShippingAbove) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) {
+      window.adminToast('Supabase client not connected');
+      return { error: 'Not connected' };
     }
-  };
-
-  // ==========================================
-  // 2. ORDERS MANAGEMENT
-  // ==========================================
-  window.loadOrders = async function (filterStatus = 'all') {
-    const client = getClient();
-    if (!client) return;
-
-    const tbody = document.getElementById('ordersTbody');
-    if (!tbody) return;
-
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px;">Loading orders…</td></tr>`;
 
     try {
-      let query = client
-        .from('orders')
-        .select(`
-          id,
-          user_id,
-          status,
-          shipping_name,
-          shipping_address,
-          shipping_phone,
-          subtotal_amount,
-          total_amount,
-          created_at,
-          order_items (
-            id,
-            product_id,
-            product_name_snapshot,
-            unit_price,
-            quantity,
-            line_total
-          )
-        `)
-        .order('created_at', { ascending: false });
+      const fee = parseFloat(deliveryFee) || 0;
+      const threshold = parseFloat(freeShippingAbove) || 0;
 
-      if (filterStatus !== 'all') {
-        query = query.eq('status', filterStatus);
+      const { data, error } = await client
+        .from('store_settings')
+        .upsert({
+          id: 'default',
+          delivery_fee: fee,
+          free_shipping_above: threshold,
+          updated_at: new Date()
+        }, { onConflict: 'id' });
+
+      if (error) {
+        console.error('saveStoreDeliverySettings error:', error);
+        window.adminToast('Error saving delivery charges: ' + error.message);
+        return { error };
       }
 
-      const { data: orders, error } = await query;
-      if (error) throw error;
+      window.adminToast(`✓ Delivery Charge set to ₹${fee} (Free above ₹${threshold}) applied store-wide!`);
+      return { success: true, data };
+    } catch(err) {
+      console.error('saveStoreDeliverySettings exception:', err);
+      window.adminToast('Error saving delivery charges: ' + err.message);
+      return { error: err };
+    }
+  };
 
-      if (!orders || orders.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 32px;">No orders found matching filter: ${filterStatus}</td></tr>`;
-        return;
+  window.initDeliverySettingsUI = async function() {
+    const feeInput = document.getElementById('settingDeliveryFee');
+    const thresholdInput = document.getElementById('settingFreeShippingAbove');
+    if (!feeInput && !thresholdInput) return;
+
+    const settings = await window.fetchStoreDeliverySettings();
+    if (feeInput && settings.delivery_fee !== undefined) {
+      feeInput.value = settings.delivery_fee;
+    }
+    if (thresholdInput && settings.free_shipping_above !== undefined) {
+      thresholdInput.value = settings.free_shipping_above;
+    }
+  };
+
+  // 8. DYNAMIC CATEGORY MANAGEMENT HELPERS
+  window.fetchAdminCategories = async function(includeInactive = true) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { data: [], error: 'Supabase client unavailable' };
+    try {
+      let query = client.from('categories').select('*').order('display_order', { ascending: true });
+      if (!includeInactive) {
+        query = query.eq('is_active', true);
       }
-
-      tbody.innerHTML = orders.map(o => `
-        <tr>
-          <td><strong>#${o.id.substring(0, 8)}</strong></td>
-          <td>
-            <strong>${o.shipping_name || 'Customer'}</strong><br>
-            <span style="font-size: 11px; color: var(--text-muted);">${o.shipping_phone || ''}</span>
-          </td>
-          <td style="max-width: 220px; font-size: 12px; color: var(--text-muted);">${o.shipping_address || '-'}</td>
-          <td>${o.order_items ? o.order_items.length : 0} items</td>
-          <td><strong>₹${Number(o.total_amount).toLocaleString('en-IN')}</strong></td>
-          <td>
-            <select class="form-control" style="padding: 4px 8px; font-size: 12px; width: auto;" onchange="updateOrderStatus('${o.id}', this.value)">
-              ${['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'].map(st => `
-                <option value="${st}" ${o.status === st ? 'selected' : ''}>${st.toUpperCase()}</option>
-              `).join('')}
-            </select>
-          </td>
-          <td>
-            <button class="btn-admin btn-ghost" style="padding: 4px 10px; font-size: 11px;" onclick="viewOrderDetails('${o.id}')">View Details</button>
-          </td>
-        </tr>
-      `).join('');
-
-      window._cachedOrders = orders;
+      const { data, error } = await query;
+      return { data: data || [], error };
     } catch (err) {
-      console.error(err);
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--accent-red); padding: 24px;">Failed to load orders: ${err.message}</td></tr>`;
+      console.error('fetchAdminCategories error:', err);
+      return { data: [], error: err };
     }
   };
 
-  window.updateOrderStatus = async function (orderId, newStatus) {
-    const client = getClient();
-    if (!client) return;
-
+  window.saveAdminCategory = async function(catData) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { error: 'Supabase client unavailable' };
     try {
-      const { error } = await client
-        .from('orders')
-        .update({ status: newStatus, updated_at: new Date() })
-        .eq('id', orderId);
-
-      if (error) throw error;
-
-      // Log to order status history
-      const { data: { user } } = await client.auth.getUser();
-      await client.from('order_status_history').insert({
-        order_id: orderId,
-        status: newStatus,
-        changed_by: user ? user.id : null,
-        note: `Status advanced to ${newStatus} via Classic PWA Admin`
-      });
-
-      window.showAdminToast(`Order #${orderId.substring(0, 8)} status updated to ${newStatus.toUpperCase()}`);
-    } catch (err) {
-      console.error(err);
-      window.showAdminToast(`Failed to update status: ${err.message}`);
-    }
-  };
-
-  window.viewOrderDetails = function (orderId) {
-    const order = (window._cachedOrders || []).find(o => o.id === orderId);
-    if (!order) return;
-
-    const modalBody = document.getElementById('orderDetailModalBody');
-    if (!modalBody) return;
-
-    modalBody.innerHTML = `
-      <div style="margin-bottom: 20px;">
-        <h3 style="font-family: var(--font-heading); font-size: 1.25rem;">Order #${order.id}</h3>
-        <p style="font-size: 12px; color: var(--text-muted);">Placed on: ${new Date(order.created_at).toLocaleString()}</p>
-      </div>
-
-      <div style="background: var(--bg-surface); padding: 16px; border-radius: var(--radius-sm); margin-bottom: 20px;">
-        <h4 style="font-size: 12px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Delivery Snapshot</h4>
-        <p><strong>Recipient:</strong> ${order.shipping_name}</p>
-        <p><strong>Address:</strong> ${order.shipping_address}</p>
-        <p><strong>Phone:</strong> ${order.shipping_phone}</p>
-      </div>
-
-      <h4 style="font-size: 12px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;">Order Items</h4>
-      <div class="table-wrap" style="margin-bottom: 20px;">
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Material Product</th>
-              <th>Unit Price</th>
-              <th>Qty</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${(order.order_items || []).map(item => `
-              <tr>
-                <td>${item.product_name_snapshot}</td>
-                <td>₹${Number(item.unit_price).toLocaleString('en-IN')}</td>
-                <td>${item.quantity}</td>
-                <td>₹${Number(item.line_total).toLocaleString('en-IN')}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-
-      <div style="display: flex; justify-content: space-between; font-size: 1.15rem; font-weight: 700; border-top: 1px solid var(--border); padding-top: 16px;">
-        <span>Total Amount:</span>
-        <span>₹${Number(order.total_amount).toLocaleString('en-IN')}</span>
-      </div>
-    `;
-
-    window.openAdminModal('orderDetailModal');
-  };
-
-  // ==========================================
-  // 3. MATERIALS MANAGER (Classic_PRD.pdf)
-  // ==========================================
-  window.loadMaterials = async function () {
-    const client = getClient();
-    if (!client) return;
-
-    const listContainer = document.getElementById('materialsList');
-    if (!listContainer) return;
-
-    try {
-      const { data: materials, error } = await client
-        .from('materials')
-        .select('*')
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-
-      if (!materials || materials.length === 0) {
-        listContainer.innerHTML = `<p style="color: var(--text-muted); padding: 16px;">No fabric materials found. Add one above!</p>`;
-        return;
+      const isUpdate = Boolean(catData.id);
+      let res;
+      if (isUpdate) {
+        res = await client.from('categories').update({
+          name: catData.name,
+          slug: catData.slug,
+          description: catData.description || null,
+          banner_url: catData.banner_url || null,
+          image_url: catData.image_url || catData.banner_url || null,
+          display_order: parseInt(catData.display_order) || 0,
+          is_active: catData.is_active !== false
+        }).eq('id', catData.id).select().single();
+      } else {
+        res = await client.from('categories').insert([{
+          name: catData.name,
+          slug: catData.slug,
+          description: catData.description || null,
+          banner_url: catData.banner_url || null,
+          image_url: catData.image_url || catData.banner_url || null,
+          display_order: parseInt(catData.display_order) || 0,
+          is_active: catData.is_active !== false
+        }]).select().single();
       }
-
-      listContainer.innerHTML = materials.map(m => `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px;">
-          <div>
-            <strong>${m.name}</strong>
-            <span style="font-size: 11px; color: var(--text-muted); margin-left: 8px;">ID: ${m.id.substring(0, 8)}</span>
-          </div>
-          <button class="btn-admin btn-ghost btn-danger" style="padding: 4px 10px; font-size: 11px;" onclick="deleteMaterial('${m.id}', '${m.name}')">Delete</button>
-        </div>
-      `).join('');
+      return res;
     } catch (err) {
-      console.error(err);
-      listContainer.innerHTML = `<p style="color: var(--accent-red); padding: 16px;">Failed to load materials: ${err.message}</p>`;
+      console.error('saveAdminCategory error:', err);
+      return { error: err };
     }
   };
 
-  window.addMaterial = async function (event) {
-    if (event) event.preventDefault();
-    const client = getClient();
-    if (!client) return;
-
-    const input = document.getElementById('newMaterialName');
-    const name = (input ? input.value : '').trim();
-    if (!name) return;
-
+  window.deleteAdminCategory = async function(catId) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { error: 'Supabase client unavailable' };
     try {
-      const { error } = await client.from('materials').insert({ name });
-      if (error) throw error;
-
-      input.value = '';
-      window.showAdminToast(`Material "${name}" created successfully!`);
-      window.loadMaterials();
+      return await client.from('categories').delete().eq('id', catId);
     } catch (err) {
-      console.error(err);
-      window.showAdminToast(`Failed to add material: ${err.message}`);
+      console.error('deleteAdminCategory error:', err);
+      return { error: err };
     }
   };
 
-  window.deleteMaterial = async function (id, name) {
-    if (!confirm(`Are you sure you want to delete material "${name}"?`)) return;
-    const client = getClient();
-    if (!client) return;
-
-    try {
-      const { error } = await client.from('materials').delete().eq('id', id);
-      if (error) throw error;
-
-      window.showAdminToast(`Material "${name}" deleted.`);
-      window.loadMaterials();
-    } catch (err) {
-      console.error(err);
-      window.showAdminToast(`Failed to delete material: ${err.message}`);
+  // 9. SIZE PRESETS MANAGEMENT HELPERS
+  window.fetchAdminSizePresets = async function() {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) {
+      // Fallback defaults if offline or DB loading
+      return {
+        data: [
+          { type: 'alpha', size_label: 'XS', is_active: true, display_order: 1 },
+          { type: 'alpha', size_label: 'S', is_active: true, display_order: 2 },
+          { type: 'alpha', size_label: 'M', is_active: true, display_order: 3 },
+          { type: 'alpha', size_label: 'L', is_active: true, display_order: 4 },
+          { type: 'alpha', size_label: 'XL', is_active: true, display_order: 5 },
+          { type: 'alpha', size_label: 'XXL', is_active: true, display_order: 6 },
+          { type: 'alpha', size_label: '3XL', is_active: true, display_order: 7 },
+          { type: 'numeric', size_label: '28', is_active: true, display_order: 1 },
+          { type: 'numeric', size_label: '30', is_active: true, display_order: 2 },
+          { type: 'numeric', size_label: '32', is_active: true, display_order: 3 },
+          { type: 'numeric', size_label: '34', is_active: true, display_order: 4 },
+          { type: 'numeric', size_label: '36', is_active: true, display_order: 5 },
+          { type: 'numeric', size_label: '38', is_active: true, display_order: 6 },
+          { type: 'numeric', size_label: '40', is_active: true, display_order: 7 },
+          { type: 'numeric', size_label: '42', is_active: true, display_order: 8 }
+        ],
+        error: null
+      };
     }
-  };
-
-  // ==========================================
-  // 4. CATEGORIES, STYLES & PATTERNS MANAGER
-  // ==========================================
-  window.loadTaxonomy = async function () {
-    const client = getClient();
-    if (!client) return;
-
-    const container = document.getElementById('taxonomyTree');
-    if (!container) return;
-
     try {
-      const { data: categories } = await client.from('categories').select('*').order('name');
-      const { data: styles } = await client.from('styles').select('*').order('name');
-      const { data: patterns } = await client.from('patterns').select('*').order('name');
-
-      if (!categories || categories.length === 0) {
-        container.innerHTML = `<p style="color: var(--text-muted); padding: 16px;">No categories created yet.</p>`;
-        return;
-      }
-
-      container.innerHTML = categories.map(cat => {
-        const catStyles = (styles || []).filter(s => s.category_id === cat.id);
-        return `
-          <div style="background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 12px;">
-              <div>
-                <strong style="font-size: 1.1rem; color: #ffffff;">${cat.name}</strong>
-                <span style="font-size: 11px; color: var(--text-muted); margin-left: 8px;">slug: ${cat.slug}</span>
-              </div>
-              <button class="btn-admin btn-ghost" style="padding: 3px 8px; font-size: 10px;" onclick="promptAddStyle('${cat.id}', '${cat.name}')">+ Add Style</button>
-            </div>
-
-            <div style="padding-left: 16px;">
-              ${catStyles.length === 0 ? `<p style="font-size: 12px; color: var(--text-muted);">No styles under ${cat.name}.</p>` : catStyles.map(st => {
-                const stylePatterns = (patterns || []).filter(p => p.style_id === st.id);
-                return `
-                  <div style="border-left: 2px solid var(--border); padding-left: 12px; margin-bottom: 12px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                      <span style="font-weight: 600; font-size: 13px;">Style: ${st.name} <span style="font-size: 10px; color: var(--text-muted);">(${st.slug})</span></span>
-                      <button class="btn-admin btn-ghost" style="padding: 2px 6px; font-size: 10px;" onclick="promptAddPattern('${st.id}', '${st.name}')">+ Add Pattern</button>
-                    </div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 6px; padding-left: 12px;">
-                      ${stylePatterns.length === 0 ? `<span style="font-size: 11px; color: var(--text-muted);">No patterns.</span>` : stylePatterns.map(p => `
-                        <span style="background: var(--bg-card); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; font-size: 11px;">
-                          ${p.name}
-                        </span>
-                      `).join('')}
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-        `;
-      }).join('');
-    } catch (err) {
-      console.error(err);
-      container.innerHTML = `<p style="color: var(--accent-red); padding: 16px;">Failed to load taxonomy: ${err.message}</p>`;
-    }
-  };
-
-  window.promptAddCategory = async function () {
-    const name = prompt("Enter new Category Name (e.g. Men's):");
-    if (!name || !name.trim()) return;
-    const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-    const client = getClient();
-    try {
-      const { error } = await client.from('categories').insert({ name: name.trim(), slug });
-      if (error) throw error;
-      window.showAdminToast(`Category "${name}" created!`);
-      window.loadTaxonomy();
-    } catch (e) {
-      window.showAdminToast('Error: ' + e.message);
-    }
-  };
-
-  window.promptAddStyle = async function (categoryId, categoryName) {
-    const name = prompt(`Enter new Style for ${categoryName} (e.g. Formal, Casual):`);
-    if (!name || !name.trim()) return;
-    const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-    const client = getClient();
-    try {
-      const { error } = await client.from('styles').insert({ category_id: categoryId, name: name.trim(), slug });
-      if (error) throw error;
-      window.showAdminToast(`Style "${name}" created!`);
-      window.loadTaxonomy();
-    } catch (e) {
-      window.showAdminToast('Error: ' + e.message);
-    }
-  };
-
-  window.promptAddPattern = async function (styleId, styleName) {
-    const name = prompt(`Enter new Pattern for ${styleName} (e.g. Whites, Plain, Stripes, Checks, Prints):`);
-    if (!name || !name.trim()) return;
-    const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-');
-
-    const client = getClient();
-    try {
-      const { error } = await client.from('patterns').insert({ style_id: styleId, name: name.trim(), slug });
-      if (error) throw error;
-      window.showAdminToast(`Pattern "${name}" created!`);
-      window.loadTaxonomy();
-    } catch (e) {
-      window.showAdminToast('Error: ' + e.message);
-    }
-  };
-
-  // ==========================================
-  // 5. PRODUCTS CATALOG & SEARCH
-  // ==========================================
-  window.loadAllProducts = async function () {
-    const client = getClient();
-    if (!client) return;
-
-    const tbody = document.getElementById('allProductsTbody');
-    if (!tbody) return;
-
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 24px;">Loading products…</td></tr>`;
-
-    try {
-      const { data: products, error } = await client
-        .from('products')
-        .select(`
-          id,
-          name,
-          slug,
-          price,
-          stock_quantity,
-          is_active,
-          created_at,
-          categories (name),
-          styles (name),
-          materials (name),
-          product_images (image_url)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      if (!products || products.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--text-muted); padding: 32px;">No products in catalog. Click "+ Add Product" to create your first fabric!</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = products.map(p => {
-        const img = p.product_images && p.product_images.length > 0 ? p.product_images[0].image_url : 'https://images.unsplash.com/photo-1594938298603-c8148c4dae35?auto=format&fit=crop&w=150&q=80';
-        const imgCount = p.product_images ? p.product_images.length : 0;
-        return `
-          <tr>
-            <td>
-              <div style="position: relative; width: 48px;">
-                <img src="${img}" style="width: 48px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border);" alt="${p.name}">
-                ${imgCount > 1 ? `<span style="position: absolute; bottom: 2px; right: 2px; background: rgba(0,0,0,0.8); color: #fff; font-size: 9px; padding: 1px 4px; border-radius: 2px;">+${imgCount - 1}</span>` : ''}
-              </div>
-            </td>
-            <td>
-              <strong>${p.name}</strong><br>
-              <span style="font-size: 11px; color: var(--text-muted);">${p.slug}</span>
-            </td>
-            <td>${p.categories?.name || '-'} / ${p.styles?.name || '-'}</td>
-            <td><span style="background: var(--bg-surface); border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; font-size: 11px;">${p.materials?.name || 'Fabric'}</span></td>
-            <td><strong>₹${Number(p.price).toLocaleString('en-IN')}</strong></td>
-            <td>
-              <input type="number" value="${p.stock_quantity}" min="0" style="width: 70px; padding: 4px 6px; background: var(--bg-input); border: 1px solid var(--border); color: #fff; border-radius: 4px;" onchange="updateProductStock('${p.id}', this.value)">
-            </td>
-            <td>
-              <button class="btn-admin ${p.is_active ? '' : 'btn-ghost'}" style="padding: 4px 8px; font-size: 11px;" onclick="toggleProductActive('${p.id}', ${!p.is_active})">
-                ${p.is_active ? 'ACTIVE' : 'INACTIVE'}
-              </button>
-              <button class="btn-admin btn-ghost btn-danger" style="padding: 4px 8px; font-size: 11px; margin-left: 4px;" onclick="deleteProduct('${p.id}', '${p.name}')">
-                DELETE
-              </button>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    } catch (err) {
-      console.error(err);
-      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color: var(--accent-red); padding: 24px;">Failed to load products: ${err.message}</td></tr>`;
-    }
-  };
-
-  window.updateProductStock = async function (id, newStock) {
-    const client = getClient();
-    if (!client) return;
-
-    try {
-      const { error } = await client.from('products').update({ stock_quantity: parseInt(newStock, 10), updated_at: new Date() }).eq('id', id);
-      if (error) throw error;
-      window.showAdminToast('Stock updated successfully!');
-    } catch (e) {
-      window.showAdminToast('Error updating stock: ' + e.message);
-    }
-  };
-
-  window.toggleProductActive = async function (id, newActive) {
-    const client = getClient();
-    if (!client) return;
-
-    try {
-      const { error } = await client.from('products').update({ is_active: newActive, updated_at: new Date() }).eq('id', id);
-      if (error) throw error;
-      window.showAdminToast(`Product marked ${newActive ? 'ACTIVE' : 'INACTIVE'}!`);
-      window.loadAllProducts();
-    } catch (e) {
-      window.showAdminToast('Error: ' + e.message);
-    }
-  };
-
-  window.deleteProduct = async function (id, name) {
-    if (!confirm(`Delete product "${name}" permanently?`)) return;
-    const client = getClient();
-    if (!client) return;
-
-    try {
-      const { error } = await client.from('products').delete().eq('id', id);
-      if (error) throw error;
-      window.showAdminToast(`Product "${name}" deleted.`);
-      window.loadAllProducts();
-    } catch (e) {
-      window.showAdminToast('Error deleting product: ' + e.message);
-    }
-  };
-
-  // ==========================================
-  // 6. HERO BANNERS MANAGEMENT
-  // ==========================================
-  window.loadBanners = async function () {
-    const client = getClient();
-    if (!client) return;
-
-    const list = document.getElementById('bannersList');
-    if (!list) return;
-
-    try {
-      const { data: banners, error } = await client
-        .from('hero_banners')
+      const { data, error } = await client
+        .from('size_presets')
         .select('*')
         .order('display_order', { ascending: true });
+      return { data: data || [], error };
+    } catch (err) {
+      console.error('fetchAdminSizePresets error:', err);
+      return { data: [], error: err };
+    }
+  };
 
-      if (error) throw error;
+  window.saveAdminSizePreset = async function(type, sizeLabel) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { error: 'Supabase client unavailable' };
+    try {
+      return await client.from('size_presets').upsert({
+        type: type,
+        size_label: sizeLabel.trim().toUpperCase(),
+        is_active: true,
+        display_order: Date.now() % 1000
+      }, { onConflict: 'type,size_label' }).select().single();
+    } catch (err) {
+      console.error('saveAdminSizePreset error:', err);
+      return { error: err };
+    }
+  };
 
-      if (!banners || banners.length === 0) {
-        list.innerHTML = `<p style="color: var(--text-muted); padding: 16px;">No hero banners configured. Add a new banner above.</p>`;
-        return;
+  window.toggleAdminSizePreset = async function(presetId, isActive) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { error: 'Supabase client unavailable' };
+    try {
+      return await client.from('size_presets').update({ is_active: isActive }).eq('id', presetId);
+    } catch (err) {
+      console.error('toggleAdminSizePreset error:', err);
+      return { error: err };
+    }
+  };
+
+  window.deleteAdminSizePreset = async function(presetId) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { error: 'Supabase client unavailable' };
+    try {
+      return await client.from('size_presets').delete().eq('id', presetId);
+    } catch (err) {
+      console.error('deleteAdminSizePreset error:', err);
+      return { error: err };
+    }
+  };
+
+  document.addEventListener('DOMContentLoaded', function() {
+    if ("Notification" in window && Notification.permission === "granted") {
+      const btn = document.getElementById('pushNotifyBtn');
+      if (btn) {
+        btn.textContent = 'NOTIFICATIONS ENABLED ✓';
+        btn.style.background = '#2b9348';
       }
-
-      list.innerHTML = banners.map(b => `
-        <div style="display: flex; gap: 16px; align-items: center; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; margin-bottom: 12px; flex-wrap: wrap;">
-          <img src="${b.image_url}" style="width: 140px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border);">
-          <div style="flex: 1; min-width: 220px;">
-            <strong style="font-size: 1.1rem; color: #ffffff;">${b.title}</strong>
-            <p style="font-size: 12px; color: var(--text-muted);">${b.subtitle || 'No subtitle'}</p>
-            <p style="font-size: 11px; color: #60a5fa; margin-top: 4px;">Link: ${b.link_url}</p>
-          </div>
-          <div style="display: flex; gap: 8px;">
-            <button class="btn-admin ${b.is_active ? '' : 'btn-ghost'}" style="padding: 6px 10px; font-size: 11px;" onclick="toggleBannerActive('${b.id}', ${!b.is_active})">
-              ${b.is_active ? 'ACTIVE' : 'HIDDEN'}
-            </button>
-            <button class="btn-admin btn-ghost btn-danger" style="padding: 6px 10px; font-size: 11px;" onclick="deleteBanner('${b.id}')">
-              DELETE
-            </button>
-          </div>
-        </div>
-      `).join('');
-    } catch (e) {
-      console.error(e);
-      list.innerHTML = `<p style="color: var(--accent-red); padding: 16px;">Failed to load banners: ${e.message}</p>`;
     }
-  };
-
-  window.toggleBannerActive = async function (id, newActive) {
-    const client = getClient();
-    if (!client) return;
-
-    try {
-      const { error } = await client.from('hero_banners').update({ is_active: newActive }).eq('id', id);
-      if (error) throw error;
-      window.showAdminToast('Banner visibility updated!');
-      window.loadBanners();
-    } catch (e) {
-      window.showAdminToast('Error: ' + e.message);
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('Admin SW registered:', reg))
+        .catch(err => console.error('Admin SW registration failed:', err));
     }
-  };
+    window.initDeliverySettingsUI();
+  });
 
-  window.deleteBanner = async function (id) {
-    if (!confirm('Delete this banner?')) return;
-    const client = getClient();
-    if (!client) return;
-
-    try {
-      const { error } = await client.from('hero_banners').delete().eq('id', id);
-      if (error) throw error;
-      window.showAdminToast('Banner removed.');
-      window.loadBanners();
-    } catch (e) {
-      window.showAdminToast('Error: ' + e.message);
-    }
-  };
-
-  window.addNewBanner = async function (event) {
-    if (event) event.preventDefault();
-    const client = getClient();
-    if (!client) return;
-
-    const title = document.getElementById('bannerTitle').value;
-    const subtitle = document.getElementById('bannerSubtitle').value;
-    const imageUrl = document.getElementById('bannerImageUrl').value;
-    const linkUrl = document.getElementById('bannerLinkUrl').value || '/pages/listing.html';
-    const order = parseInt(document.getElementById('bannerOrder').value, 10) || 1;
-
-    try {
-      const { error } = await client.from('hero_banners').insert({
-        title,
-        subtitle,
-        image_url: imageUrl,
-        link_url: linkUrl,
-        display_order: order,
-        is_active: true
-      });
-
-      if (error) throw error;
-      window.showAdminToast('New hero banner published to website!');
-      document.getElementById('bannerForm').reset();
-      window.loadBanners();
-    } catch (e) {
-      window.showAdminToast('Error publishing banner: ' + e.message);
-    }
-  };
-
-  // ==========================================
-  // 7. USERS / CUSTOMER PROFILES
-  // ==========================================
-  window.loadCustomerUsers = async function () {
-    const client = getClient();
-    if (!client) return;
-
-    const tbody = document.getElementById('usersTbody');
-    if (!tbody) return;
-
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 24px;">Loading customer accounts…</td></tr>`;
-
-    try {
-      const { data: profiles, error } = await client
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      if (!profiles || profiles.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--text-muted); padding: 24px;">No registered profiles found.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = profiles.map(p => `
-        <tr>
-          <td><strong>${p.name || 'Unnamed Customer'}</strong></td>
-          <td>${p.phone || '-'}</td>
-          <td style="max-width: 250px; font-size: 12px; color: var(--text-muted);">${p.address || '-'}</td>
-          <td>
-            <span class="pill ${p.is_admin ? 'pill-delivered' : 'pill-confirmed'}">
-              ${p.is_admin ? 'ADMIN' : 'CUSTOMER'}
-            </span>
-          </td>
-          <td>${new Date(p.created_at).toLocaleDateString()}</td>
-        </tr>
-      `).join('');
-    } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: var(--accent-red); padding: 24px;">Error loading profiles: ${e.message}</td></tr>`;
-    }
-  };
+  document.addEventListener('adminSupabaseReady', function() {
+    window.initDeliverySettingsUI();
+  });
 
 })();
+

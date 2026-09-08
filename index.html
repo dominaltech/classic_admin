@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard | Classic Collection Solapur Admin</title>
+  <title>Dashboard & Analytics — Classic Collection Solapur Admin</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="images/logo.jpg" type="image/jpeg">
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
@@ -14,31 +15,27 @@
   <!-- HEADER -->
   <header class="admin-header">
     <div class="header-left">
-      <span class="brand-title">Classic Collection</span>
-      <span class="brand-badge">Admin PWA</span>
-    </div>
-    <div class="header-right">
-      <div class="live-indicator">
-        <span class="live-dot"></span>
-        <span>CONNECTED</span>
-      </div>
+      <button class="menu-trigger-btn" onclick="openDrawer()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div class="brand-logo"><img src="images/logo.jpg" alt="Classic Collection Solapur Logo"><span class="brand-name">CLASSIC COLLECTION SOLAPUR ADMIN</span></div>
     </div>
   </header>
 
-  <!-- NAVIGATION TABS -->
+  <!-- DESKTOP NAVIGATION TABS -->
   <nav class="admin-nav-tabs">
     <a href="index.html" class="admin-nav-tab active">Dashboard</a>
     <a href="orders.html" class="admin-nav-tab">Orders</a>
+    <a href="coupons.html" class="admin-nav-tab">🎟️ Coupons &amp; Banners</a>
     <a href="all-products.html" class="admin-nav-tab">All Products</a>
+    <a href="categories.html" class="admin-nav-tab">Categories</a>
+    <a href="sizes.html" class="admin-nav-tab">Sizes &amp; Stock</a>
     <a href="add-product.html" class="admin-nav-tab">+ Add Product</a>
-    <a href="categories.html" class="admin-nav-tab">Categories &amp; Styles</a>
-    <a href="materials.html" class="admin-nav-tab">Fabric Materials</a>
-    <a href="banners.html" class="admin-nav-tab">Hero Banners</a>
-    <a href="users.html" class="admin-nav-tab">Customers</a>
+    <a href="bulk-upload.html" class="admin-nav-tab bulk-highlight">⚡ Bulk Upload</a>
+    <a href="add-banner.html" class="admin-nav-tab">Hero Banners</a>
+    <a href="users.html" class="admin-nav-tab">Users</a>
   </nav>
 
   <main class="admin-container">
-    <!-- STAT CARDS -->
+    <!-- STAT CARDS (TOP SECTION) -->
     <div class="stat-grid">
       <div class="stat-card">
         <div class="stat-label">TOTAL ORDERS</div>
@@ -46,91 +43,303 @@
       </div>
       <div class="stat-card">
         <div class="stat-label">TOTAL REVENUE</div>
-        <div class="stat-val" id="totalRevenueVal">₹0</div>
+        <div class="stat-val" id="totalRevenueVal">₹0.00</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">TOTAL PRODUCTS</div>
         <div class="stat-val" id="totalProductsVal">0</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">FABRIC MATERIALS</div>
-        <div class="stat-val" id="totalMaterialsVal">0</div>
+        <div class="stat-label">TOTAL USERS</div>
+        <div class="stat-val" id="totalUsersVal">0</div>
       </div>
     </div>
 
-    <!-- STORE DELIVERY & ANNOUNCEMENT SETTINGS -->
-    <div class="admin-card">
-      <div class="card-head">
+    <!-- GLOBAL STORE DELIVERY & SHIPPING CHARGES -->
+    <div class="analytics-card" style="margin-bottom: 24px; border: 1px solid #333; background: #161616;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
         <div>
-          <h3 class="card-title">STORE DELIVERY &amp; ANNOUNCEMENT SETTINGS</h3>
-          <p class="card-subtitle">Configure store-wide standard delivery fee, free shipping order threshold, and header announcement ticker.</p>
+          <h3 style="font-size: 1.1rem; font-weight: 800; text-transform: uppercase; color: #fff; margin-bottom: 4px;">🚚 STORE DELIVERY CHARGES SETUP</h3>
+          <p style="font-size: 12px; color: #888; margin: 0;">Update standard shipping fees and free shipping minimum order threshold. Applies store-wide instantly.</p>
         </div>
-        <span class="brand-badge" style="color: var(--accent-blue);">GLOBAL STORE CONFIG</span>
+        <span style="background: #222; border: 1px solid #444; padding: 4px 10px; border-radius: 3px; font-size: 11px; font-weight: 800; color: #00b4d8;">GLOBAL CONFIG</span>
       </div>
 
-      <form id="settingsForm" onsubmit="saveStoreSettings(event)">
-        <div class="form-grid">
-          <div class="form-group">
-            <label class="form-label" for="settingDeliveryFee">Standard Delivery Fee (₹)</label>
-            <input type="number" id="settingDeliveryFee" class="form-control" placeholder="60" required min="0">
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="settingFreeShippingAbove">Free Delivery Above (₹)</label>
-            <input type="number" id="settingFreeShippingAbove" class="form-control" placeholder="999" required min="0">
-          </div>
-          <div class="form-group" style="grid-column: 1 / -1;">
-            <label class="form-label" for="settingAnnouncement">Header Announcement Ticker Message</label>
-            <input type="text" id="settingAnnouncement" class="form-control" placeholder="Classic Collection Solapur — Premium Cloth Materials | Fast Shipping Across India">
-          </div>
+      <form id="deliverySettingsForm" onsubmit="handleDeliverySettingsSubmit(event)" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) auto; gap: 16px; align-items: end;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #aaa; margin-bottom: 6px; display: block;">Standard Delivery Fee (₹)</label>
+          <input type="number" id="settingDeliveryFee" class="form-control" style="background: #0d0d0d; border-color: #333; color: #fff; font-weight: 700; font-size: 15px;" min="0" step="1" required placeholder="60">
         </div>
-        <button type="submit" class="btn-admin">Save &amp; Apply to Store</button>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #aaa; margin-bottom: 6px; display: block;">Free Shipping Threshold (₹)</label>
+          <input type="number" id="settingFreeShippingAbove" class="form-control" style="background: #0d0d0d; border-color: #333; color: #fff; font-weight: 700; font-size: 15px;" min="0" step="1" required placeholder="999">
+        </div>
+        <div>
+          <button type="submit" id="saveDeliveryBtn" class="btn-admin" style="background: var(--accent-green); white-space: nowrap; height: 44px; display: flex; align-items: center; gap: 8px; font-weight: 800; width: 100%;">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            SAVE & APPLY TO STORE
+          </button>
+        </div>
       </form>
     </div>
 
-    <!-- RECENT ORDERS -->
-    <div class="admin-card">
-      <div class="card-head">
-        <div>
-          <h3 class="card-title">RECENT ORDERS</h3>
-          <p class="card-subtitle">Latest customer material orders from classicsolapur.com</p>
-        </div>
-        <a href="orders.html" class="btn-admin btn-ghost">View All Orders →</a>
-      </div>
+    <!-- QUICK ACTIONS -->
+    <div style="display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;">
+      <a href="bulk-upload.html" class="btn-admin" style="background: var(--accent-red); flex: 1;">⚡ BULK PRODUCT UPLOAD</a>
+      <a href="add-product.html" class="btn-admin" style="background: #111; flex: 1;">+ ADD SINGLE PRODUCT (WITH SLIDER)</a>
+      <a href="add-banner.html" class="btn-admin" style="background: #333; flex: 1;">MANAGE HERO BANNERS</a>
+    </div>
 
-      <div class="table-wrap">
+    <!-- VISUAL ANALYTICS CHART (TOP HALF) -->
+    <div class="analytics-card">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 1.1rem; font-weight: 800; text-transform: uppercase;">SALES & ORDER ANALYTICS</h3>
+        <span style="font-size: 0.75rem; font-weight: 800; color: var(--accent-green);">LIVE METRICS</span>
+      </div>
+      <div class="chart-container" id="analyticsChart">
+        <div class="chart-bar-col"><div class="chart-bar" style="height: 40%;"></div><span class="chart-bar-label">MON</span></div>
+        <div class="chart-bar-col"><div class="chart-bar" style="height: 65%;"></div><span class="chart-bar-label">TUE</span></div>
+        <div class="chart-bar-col"><div class="chart-bar" style="height: 30%;"></div><span class="chart-bar-label">WED</span></div>
+        <div class="chart-bar-col"><div class="chart-bar" style="height: 85%;"></div><span class="chart-bar-label">THU</span></div>
+        <div class="chart-bar-col"><div class="chart-bar" style="height: 50%;"></div><span class="chart-bar-label">FRI</span></div>
+        <div class="chart-bar-col"><div class="chart-bar" style="height: 95%;"></div><span class="chart-bar-label">SAT</span></div>
+        <div class="chart-bar-col"><div class="chart-bar" style="height: 75%;"></div><span class="chart-bar-label">SUN</span></div>
+      </div>
+    </div>
+
+    <!-- RECENT ORDERS TABLE (BOTTOM HALF) -->
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-size: 1.1rem; font-weight: 800; text-transform: uppercase;">RECENT ORDERS</h3>
+        <a href="orders.html" style="font-size: 0.85rem; font-weight: 800; color: var(--accent-red);">VIEW ALL ORDERS →</a>
+      </div>
+      <div class="admin-table-wrapper">
         <table class="admin-table">
           <thead>
             <tr>
-              <th>Order ID</th>
+              <th>Order ID & Date</th>
               <th>Customer</th>
-              <th>Phone</th>
-              <th>Amount</th>
+              <th>Ordered Item & Size</th>
+              <th>Total Amount</th>
               <th>Status</th>
-              <th>Date</th>
+              <th style="text-align: center;">Action</th>
             </tr>
           </thead>
-          <tbody id="recentOrdersTbody">
-            <tr><td colspan="6" style="text-align:center; padding: 24px;">Loading recent orders…</td></tr>
+          <tbody id="recentOrdersBody">
+            <tr><td colspan="6" style="text-align: center; color: #999;">Loading dashboard data...</td></tr>
           </tbody>
         </table>
       </div>
     </div>
   </main>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.adminSupabase) {
-        window.loadDashboardStats();
-      } else {
-        document.addEventListener('adminSupabaseReady', () => {
-          window.loadDashboardStats();
-        });
-      }
+  <!-- FIXED MOBILE BOTTOM TASKBAR -->
+  <nav class="admin-mobile-taskbar">
+    <a href="index.html" class="admin-taskbar-tab active">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Dashboard</span>
+    </a>
+    <a href="orders.html" class="admin-taskbar-tab">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>Orders</span>
+    </a>
+    <a href="all-products.html" class="admin-taskbar-tab">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>Products</span>
+    </a>
+    <a href="categories.html" class="admin-taskbar-tab">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      <span>Categories</span>
+    </a>
+    <a href="sizes.html" class="admin-taskbar-tab">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      <span>Sizes</span>
+    </a>
+    <button class="admin-taskbar-tab" onclick="openDrawer()">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0 2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Menu</span>
+    </button>
+  </nav>
 
-      // Register PWA service worker
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW failed:', err));
-      }
+  <!-- SECTION-WISE ADMIN NAVIGATION DRAWER -->
+  <div class="drawer-overlay" id="adminDrawer" onclick="closeDrawer(event)">
+    <div class="drawer-left" onclick="event.stopPropagation()">
+      <div class="drawer-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="images/logo.jpg" alt="Logo" style="height: 28px; width: auto; border-radius: 4px;" />
+          <span class="drawer-title">ADMIN MENU</span>
+        </div>
+        <button class="drawer-close-btn" onclick="closeDrawer()">✕</button>
+      </div>
+      
+      <div class="drawer-scroll-body">
+        
+        <!-- SECTION 1: OVERVIEW & SALES -->
+        <div class="drawer-menu-section">
+          <div class="drawer-section-heading">OVERVIEW &amp; SALES</div>
+          <a href="index.html" class="drawer-nav-item active">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span>Analytics Dashboard</span>
+          </a>
+          <a href="orders.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>Customer Orders &amp; Slip</span>
+          </a>
+        </div>
+
+        <!-- SECTION 2: MARKETING & PROMOTIONS -->
+        <div class="drawer-menu-section">
+          <div class="drawer-section-heading">MARKETING &amp; PROMOTIONS</div>
+          <a href="coupons.html" class="drawer-nav-item highlight-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            <span>🎟️ Discount Coupons</span>
+          </a>
+          <a href="coupons.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>✨ Homepage Event Banners</span>
+          </a>
+          <a href="add-banner.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span>🖼️ Hero Slider Banners</span>
+          </a>
+        </div>
+
+        <!-- SECTION 3: CATALOG & INVENTORY -->
+        <div class="drawer-menu-section">
+          <div class="drawer-section-heading">CATALOG &amp; INVENTORY</div>
+          <a href="all-products.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span>All Products Catalog</span>
+          </a>
+          <a href="add-product.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            <span>+ Add New Product</span>
+          </a>
+          <a href="bulk-upload.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span>⚡ Bulk Product Upload</span>
+          </a>
+          <a href="categories.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <span>Manage Categories</span>
+          </a>
+          <a href="sizes.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <span>Sizes &amp; Stock Matrix</span>
+          </a>
+        </div>
+
+        <!-- SECTION 4: USERS & NOTIFICATIONS -->
+        <div class="drawer-menu-section">
+          <div class="drawer-section-heading">USERS &amp; SYSTEM</div>
+          <a href="users.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Registered Customers</span>
+          </a>
+          <button class="drawer-nav-item btn-push-drawer" onclick="requestAdminNotificationPermission()">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span>Enable Push Notifications</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function handleDeliverySettingsSubmit(e) {
+      e.preventDefault();
+      const fee = document.getElementById('settingDeliveryFee').value;
+      const threshold = document.getElementById('settingFreeShippingAbove').value;
+      const btn = document.getElementById('saveDeliveryBtn');
+      btn.disabled = true;
+      btn.textContent = 'SAVING...';
+
+      await window.saveStoreDeliverySettings(fee, threshold);
+      btn.disabled = false;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> SAVE & APPLY TO STORE`;
+    }
+
+    async function loadDashboardMetrics() {
+      const ordersTbody = document.getElementById('recentOrdersBody');
+      try {
+        const { data: products } = await window.fetchAdminProducts();
+        document.getElementById('totalProductsVal').textContent = products ? products.length : 0;
+
+        const { data: orders } = await window.fetchAdminOrders();
+        if (orders && orders.length > 0) {
+          document.getElementById('totalOrdersVal').textContent = orders.length;
+          const rev = orders.reduce((sum, o) => {
+            const isPaid = (o.payment_status === 'PAID');
+            const isNotCancelled = o.order_status !== 'CANCELLED' && o.order_status !== 'PAYMENT_CANCELLED';
+            if (isPaid && isNotCancelled) {
+              return sum + parseFloat(o.total_amount || 0);
+            }
+            return sum;
+          }, 0);
+          document.getElementById('totalRevenueVal').textContent = `₹${rev.toFixed(2)}`;
+
+          ordersTbody.innerHTML = orders.slice(0, 8).map(o => {
+            const dateStr = new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+            const items = o.order_items || [];
+            let itemsHtml = '<span style="color:#999; font-size: 0.8rem;">Item snapshot</span>';
+            if (items.length > 0) {
+              const first = items[0];
+              const extraCount = items.length - 1;
+              itemsHtml = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <img src="${first.image_url || 'images/logo.jpg'}" style="width: 38px; height: 38px; border-radius: 4px; object-fit: cover; border: 1px solid #ddd;" onerror="this.src='images/logo.jpg'" />
+                  <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <div style="font-weight: 800; font-size: 0.82rem; color: #111; max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${first.product_name}</div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                      <span class="order-size-badge" style="font-size: 0.65rem; padding: 1px 5px;">SIZE: ${first.variant_size || 'M'}</span>
+                      <span style="font-size: 0.72rem; color: #666;">Qty: ${first.quantity || 1}</span>
+                      ${extraCount > 0 ? `<span style="font-size: 0.7rem; font-weight: 700; color: #0077b6;">+${extraCount} more</span>` : ''}
+                    </div>
+                  </div>
+                </div>
+              `;
+            }
+
+            const status = o.order_status || 'PLACED';
+            const payStatus = (o.payment_status || '').toUpperCase();
+            const badgeClass = (status === 'CANCELLED' || status === 'PAYMENT_CANCELLED' || payStatus === 'CANCELLED') ? 'badge-cancelled' : `badge-${status.toLowerCase()}`;
+
+            return `
+              <tr>
+                <td>
+                  <strong>${o.order_number}</strong>
+                  <div style="font-size: 0.75rem; color: #888;">${dateStr}</div>
+                </td>
+                <td>
+                  <strong>${o.customer_name || 'Customer'}</strong>
+                  <div style="font-size: 0.75rem; color: #666;">${o.customer_phone || ''}</div>
+                </td>
+                <td>${itemsHtml}</td>
+                <td><strong>₹${parseFloat(o.total_amount || 0).toFixed(0)}</strong></td>
+                <td><span class="status-badge ${badgeClass}">${payStatus === 'CANCELLED' ? 'CANCELLED' : status}</span></td>
+                <td style="text-align: center;">
+                  <a href="orders.html" class="btn-admin" style="padding: 4px 8px; font-size: 0.75rem; background: #222;">MANAGE</a>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        } else {
+          ordersTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">No orders found.</td></tr>';
+        }
+
+        // Fetch User Profiles count
+        const client = window.urSbClient || window.adminSupabase;
+        if (client) {
+          const { data: profiles } = await client.from('profiles').select('id');
+          document.getElementById('totalUsersVal').textContent = profiles ? profiles.length : 0;
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      loadDashboardMetrics();
+      document.addEventListener('adminSupabaseReady', loadDashboardMetrics);
     });
   </script>
 </body>

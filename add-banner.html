@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Registered Users — Classic Collection Solapur Admin</title>
+  <title>Hero Banners & Slider Manager — Classic Collection Solapur Admin</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="images/logo.jpg" type="image/jpeg">
   <link rel="stylesheet" href="styles.css">
@@ -30,44 +30,61 @@
     <a href="sizes.html" class="admin-nav-tab">Sizes &amp; Stock</a>
     <a href="add-product.html" class="admin-nav-tab">+ Add Product</a>
     <a href="bulk-upload.html" class="admin-nav-tab bulk-highlight">⚡ Bulk Upload</a>
-    <a href="add-banner.html" class="admin-nav-tab">Hero Banners</a>
-    <a href="users.html" class="admin-nav-tab active">Users</a>
+    <a href="add-banner.html" class="admin-nav-tab active">Hero Banners</a>
+    <a href="users.html" class="admin-nav-tab">Users</a>
   </nav>
 
-  <main class="admin-container">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h2 style="font-family: var(--font-heading); font-size: 1.5rem; font-weight: 800;">REGISTERED CUSTOMER ACCOUNTS</h2>
+  <main class="admin-container" style="display: grid; grid-template-columns: 1fr; gap: 32px;">
+    <!-- CREATE BANNER FORM -->
+    <div style="background: #ffffff; padding: 28px; border-radius: var(--radius-md); border: 1px solid var(--border-light); box-shadow: var(--shadow-sm);">
+      <h2 style="font-family: var(--font-heading); font-size: 1.5rem; font-weight: 800; margin-bottom: 24px;">ADD HOMEPAGE HERO SLIDER BANNER</h2>
+      <form id="addBannerForm">
+        <div class="form-group">
+          <label>Banner Title *</label>
+          <input type="text" id="banTitle" class="form-control" required placeholder="e.g. CLASSIC MEN'S FORMAL FABRICS 2026">
+        </div>
+        <div class="form-group">
+          <label>Subtitle</label>
+          <input type="text" id="banSub" class="form-control" placeholder="e.g. PREMIUM WOOL BLEND · FORMAL & CASUAL FABRICS">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label>Badge Text</label>
+            <input type="text" id="banBadge" class="form-control" placeholder="e.g. NEW ARRIVALS">
+          </div>
+          <div class="form-group">
+            <label>Target Page Link</label>
+            <input type="text" id="banLink" class="form-control" value="suiting.html">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Banner Image Upload *</label>
+          <input type="file" id="banImgFile" class="form-control" accept="image/*" required>
+        </div>
+        <button type="submit" id="saveBannerBtn" class="btn-admin" style="width: 100%; padding: 12px;">SAVE & PUBLISH BANNER</button>
+      </form>
     </div>
 
-    <!-- STAT CARDS -->
-    <div class="stat-grid" style="grid-template-columns: repeat(2, 1fr);">
-      <div class="stat-card">
-        <div class="stat-label">TOTAL REGISTERED CUSTOMERS</div>
-        <div class="stat-val" id="totalUsersCount">0</div>
+    <!-- EXISTING BANNERS TABLE -->
+    <div>
+      <h3 style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800; margin-bottom: 16px;">ACTIVE HOMEPAGE SLIDER BANNERS</h3>
+      <div class="admin-table-wrapper">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Image</th>
+              <th>Title</th>
+              <th>Subtitle</th>
+              <th>Badge</th>
+              <th>Target Link</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="bannersBody">
+            <tr><td colspan="6" style="text-align: center; color: #999;">Loading banners...</td></tr>
+          </tbody>
+        </table>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">VERIFIED ACCOUNTS</div>
-        <div class="stat-val" style="color: var(--accent-green);">100%</div>
-      </div>
-    </div>
-
-    <!-- USERS TABLE -->
-    <div class="admin-table-wrapper">
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Customer ID / Name</th>
-            <th>Phone Number</th>
-            <th>Default Address</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Joined Date</th>
-          </tr>
-        </thead>
-        <tbody id="usersTableBody">
-          <tr><td colspan="6" style="text-align: center; color: #999;">Loading customer profiles...</td></tr>
-        </tbody>
-      </table>
     </div>
   </main>
 
@@ -94,7 +111,7 @@
       <span>Sizes</span>
     </a>
     <button class="admin-taskbar-tab" onclick="openDrawer()">
-      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0 2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       <span>Menu</span>
     </button>
   </nav>
@@ -136,7 +153,7 @@
             <svg viewBox="0 0 24 24" class="drawer-icon"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             <span>✨ Homepage Event Banners</span>
           </a>
-          <a href="add-banner.html" class="drawer-nav-item">
+          <a href="add-banner.html" class="drawer-nav-item active">
             <svg viewBox="0 0 24 24" class="drawer-icon"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
             <span>🖼️ Hero Slider Banners</span>
           </a>
@@ -170,7 +187,7 @@
         <!-- SECTION 4: USERS & NOTIFICATIONS -->
         <div class="drawer-menu-section">
           <div class="drawer-section-heading">USERS &amp; SYSTEM</div>
-          <a href="users.html" class="drawer-nav-item active">
+          <a href="users.html" class="drawer-nav-item">
             <svg viewBox="0 0 24 24" class="drawer-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             <span>Registered Customers</span>
           </a>
@@ -185,48 +202,96 @@
   </div>
 
   <script>
-    async function loadUsers() {
-      const tbody = document.getElementById('usersTableBody');
-      try {
-        const { data: profiles, error } = await window.fetchAdminUsers();
+    async function loadBanners() {
+      const tbody = document.getElementById('bannersBody');
+      const client = window.urSbClient || window.adminSupabase;
+      if (!client) return;
 
-        if (error || !profiles || profiles.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">No registered customer profiles found.</td></tr>';
-          document.getElementById('totalUsersCount').textContent = 0;
+      try {
+        const { data: banners } = await client
+          .from('banners')
+          .select('*')
+          .order('display_order', { ascending: true });
+
+        if (!banners || banners.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">No banners found.</td></tr>';
           return;
         }
 
-        document.getElementById('totalUsersCount').textContent = profiles.length;
+        tbody.innerHTML = banners.map(b => `
+          <tr>
+            <td><img src="${b.image_url || 'images/logo.jpg'}" style="width: 90px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;"></td>
+            <td><strong>${b.title}</strong></td>
+            <td><small>${b.subtitle || '-'}</small></td>
+            <td><span class="status-badge badge-placed">${b.badge_text || 'BANNER'}</span></td>
+            <td><small>${b.link_url || '#'}</small></td>
+            <td>
+              <button onclick="deleteBanner('${b.id}')" style="background: var(--accent-red); color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 0.75rem;">DELETE</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch(e) { console.error(e); }
+    }
 
-        tbody.innerHTML = profiles.map(p => {
-          let addr = p.address || '';
-          if (!addr && p.default_address) {
-            addr = typeof p.default_address === 'object' ? (p.default_address.address || JSON.stringify(p.default_address)) : p.default_address;
+    document.getElementById('addBannerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById('saveBannerBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'UPLOADING & SAVING...';
+
+      try {
+        const title = document.getElementById('banTitle').value.trim();
+        const subtitle = document.getElementById('banSub').value.trim();
+        const badge_text = document.getElementById('banBadge').value.trim();
+        const link_url = document.getElementById('banLink').value.trim();
+
+        const imgInput = document.getElementById('banImgFile');
+        let imageUrl = 'images/logo.jpg';
+        if (imgInput.files && imgInput.files.length > 0) {
+          const uploadedUrl = await window.uploadFileToStorage(imgInput.files[0], 'banner-images', 'banners');
+          if (uploadedUrl) imageUrl = uploadedUrl;
+        }
+
+        const client = window.urSbClient || window.adminSupabase;
+        if (client) {
+          const { error } = await client.from('banners').insert([{
+            title, subtitle, badge_text, link_url, image_url: imageUrl, display_order: Date.now(), is_active: true
+          }]);
+
+          if (error) {
+            window.adminToast('Error adding banner: ' + error.message, true);
+          } else {
+            window.adminToast('Banner saved successfully!');
+            document.getElementById('addBannerForm').reset();
+            loadBanners();
           }
-          if (p.pincode) addr += (addr ? ' - PIN: ' : 'PIN: ') + p.pincode;
+        }
+      } catch(err) {
+        console.error(err);
+        window.adminToast('Error: ' + err.message, true);
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'SAVE & PUBLISH BANNER';
+      }
+    });
 
-          return `
-            <tr>
-              <td>
-                <strong>${p.full_name || 'Urban Customer'}</strong>
-                <br><small style="color:#888;">ID: ${p.id ? p.id.substring(0,8) : 'cust'}...</small>
-              </td>
-              <td>${p.phone || '+91 9876543210'}</td>
-              <td><small>${addr || 'Bijapur, Karnataka'}</small></td>
-              <td><span class="status-badge badge-placed">${p.role || 'user'}</span></td>
-              <td><span class="status-badge badge-delivered">ACTIVE</span></td>
-              <td><small>${p.created_at ? new Date(p.created_at).toLocaleDateString() : 'Recent'}</small></td>
-            </tr>
-          `;
-        }).join('');
-      } catch(e) {
-        console.error('loadUsers error:', e);
+    async function deleteBanner(id) {
+      if (!confirm('Are you sure you want to delete this banner?')) return;
+      const client = window.urSbClient || window.adminSupabase;
+      if (client) {
+        const { error } = await client.from('banners').delete().eq('id', id);
+        if (error) {
+          window.adminToast('Error deleting banner: ' + error.message, true);
+        } else {
+          window.adminToast('Banner deleted.');
+          loadBanners();
+        }
       }
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-      loadUsers();
-      document.addEventListener('adminSupabaseReady', loadUsers);
+      loadBanners();
+      document.addEventListener('adminSupabaseReady', loadBanners);
     });
   </script>
 </body>

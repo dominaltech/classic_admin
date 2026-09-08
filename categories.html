@@ -3,60 +3,414 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Categories &amp; Styles Taxonomy | Classic Admin PWA</title>
-  <link rel="manifest" href="manifest.json">
+  <title>Manage Categories — Classic Collection Solapur Admin</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="admin.js"></script>
 </head>
 <body>
+
+  <!-- ADMIN HEADER -->
   <header class="admin-header">
     <div class="header-left">
-      <span class="brand-title">Classic Collection</span>
-      <span class="brand-badge">Admin PWA</span>
+      <button class="menu-trigger-btn" onclick="openDrawer()" aria-label="Open Admin Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="brand-logo">
+        <img src="images/logo.jpg" alt="Classic Collection Solapur Logo" style="height:32px;width:auto;object-fit:contain;">
+        <span class="brand-name">CLASSIC COLLECTION SOLAPUR ADMIN</span>
+      </div>
     </div>
-    <div class="header-right">
-      <button class="btn-admin" onclick="promptAddCategory()">+ Add Category</button>
+    <div style="display:flex; gap:10px;">
+      <a href="index.html" class="btn-admin" style="font-size:0.75rem; padding:6px 12px; background:#333;">DASHBOARD</a>
+      <button class="btn-admin btn-admin-success" onclick="openCategoryModal()" style="font-size:0.75rem; padding:6px 12px;">+ ADD CATEGORY</button>
     </div>
   </header>
 
+  <!-- DESKTOP NAV TABS -->
   <nav class="admin-nav-tabs">
     <a href="index.html" class="admin-nav-tab">Dashboard</a>
     <a href="orders.html" class="admin-nav-tab">Orders</a>
+    <a href="coupons.html" class="admin-nav-tab">🎟️ Coupons &amp; Banners</a>
     <a href="all-products.html" class="admin-nav-tab">All Products</a>
+    <a href="categories.html" class="admin-nav-tab active">Categories</a>
+    <a href="sizes.html" class="admin-nav-tab">Sizes &amp; Stock</a>
     <a href="add-product.html" class="admin-nav-tab">+ Add Product</a>
-    <a href="categories.html" class="admin-nav-tab active">Categories &amp; Styles</a>
-    <a href="materials.html" class="admin-nav-tab">Fabric Materials</a>
-    <a href="banners.html" class="admin-nav-tab">Hero Banners</a>
-    <a href="users.html" class="admin-nav-tab">Customers</a>
+    <a href="bulk-upload.html" class="admin-nav-tab bulk-highlight">⚡ Bulk Upload</a>
+    <a href="add-banner.html" class="admin-nav-tab">Hero Banners</a>
+    <a href="users.html" class="admin-nav-tab">Users</a>
   </nav>
 
   <main class="admin-container">
-    <div class="admin-card">
-      <div class="card-head">
-        <div>
-          <h2 class="card-title">CATALOG TAXONOMY HIERARCHY</h2>
-          <p class="card-subtitle">Manage Category → Style → Pattern tree (e.g. Men's → Formal → Whites, Plain, Stripes, Checks, Prints).</p>
-        </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+      <div>
+        <h1 style="font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px;">STORE CATEGORIES</h1>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Manage category sections, slugs, and hero banners. Changes reflect live on the website.</p>
       </div>
+      <button class="btn-admin btn-admin-success" onclick="openCategoryModal()">
+        + ADD NEW CATEGORY
+      </button>
+    </div>
 
-      <div id="taxonomyTree">
-        <p style="padding: 24px; color: var(--text-muted); text-align: center;">Loading taxonomy tree…</p>
-      </div>
+    <!-- CATEGORIES TABLE -->
+    <div class="admin-table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th style="width: 70px;">Order</th>
+            <th style="width: 100px;">Banner</th>
+            <th>Category Name</th>
+            <th>Slug / URL</th>
+            <th>Status</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="categoriesBody">
+          <tr>
+            <td colspan="6" style="text-align: center; color: #999; padding: 40px;">
+              Loading store categories...
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </main>
 
+  <!-- ADD / EDIT CATEGORY MODAL -->
+  <div class="admin-modal-overlay" id="categoryModal" onclick="closeCategoryModal(event)">
+    <div class="admin-modal-card" onclick="event.stopPropagation()">
+      <div class="admin-modal-header">
+        <h3 class="admin-modal-title" id="catModalTitle">Add New Category</h3>
+        <button class="modal-close-btn" onclick="closeCategoryModal()">✕</button>
+      </div>
+
+      <form id="categoryForm" onsubmit="handleCategoryFormSubmit(event)">
+        <input type="hidden" id="catId" value="">
+
+        <div class="form-group">
+          <label>Category Name *</label>
+          <input type="text" id="catName" class="form-control" required placeholder="e.g. Hoodies, Linen Pants, Jackets" oninput="autoGenerateSlug(this.value)">
+        </div>
+
+        <div class="form-group">
+          <label>URL Slug * (used for category links)</label>
+          <input type="text" id="catSlug" class="form-control" required placeholder="e.g. hoodies, linen-pants">
+        </div>
+
+        <div class="form-group">
+          <label>Category Description</label>
+          <textarea id="catDesc" rows="2" class="form-control" placeholder="Brief description displayed on the category collection page..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Category Banner / Hero Image</label>
+          <input type="file" id="catBannerFile" class="form-control" accept="image/*" onchange="handleBannerPreview(this)">
+          <div id="bannerPreviewBox" style="display:none; margin-top:10px;">
+            <img id="bannerPreviewImg" src="" alt="Banner Preview" style="width:100%; height:120px; object-fit:cover; border-radius:4px; border:1px solid #ddd;">
+          </div>
+          <input type="text" id="catBannerUrl" class="form-control" style="margin-top:8px;" placeholder="Or paste Image URL directly (optional)">
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom: 20px;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label>Display Order (Priority)</label>
+            <input type="number" id="catOrder" class="form-control" value="0" min="0">
+          </div>
+          <div class="form-group" style="margin-bottom:0; display:flex; flex-direction:column; justify-content:center;">
+            <label style="margin-bottom:8px;">Visibility</label>
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:700; text-transform:none;">
+              <input type="checkbox" id="catActive" checked style="width:18px; height:18px;">
+              <span>Active on Website</span>
+            </label>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:12px;">
+          <button type="button" class="btn-admin" style="flex:1; background:#666;" onclick="closeCategoryModal()">CANCEL</button>
+          <button type="submit" id="catSubmitBtn" class="btn-admin btn-admin-success" style="flex:2;">SAVE CATEGORY</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- FIXED MOBILE BOTTOM TASKBAR -->
+  <nav class="admin-mobile-taskbar">
+    <a href="index.html" class="admin-taskbar-tab">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>Dashboard</span>
+    </a>
+    <a href="orders.html" class="admin-taskbar-tab">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>Orders</span>
+    </a>
+    <a href="all-products.html" class="admin-taskbar-tab">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span>Products</span>
+    </a>
+    <a href="categories.html" class="admin-taskbar-tab active">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      <span>Categories</span>
+    </a>
+    <a href="sizes.html" class="admin-taskbar-tab">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      <span>Sizes</span>
+    </a>
+    <button class="admin-taskbar-tab" onclick="openDrawer()">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0 2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Menu</span>
+    </button>
+  </nav>
+
+  <!-- SECTION-WISE ADMIN NAVIGATION DRAWER -->
+  <div class="drawer-overlay" id="adminDrawer" onclick="closeDrawer(event)">
+    <div class="drawer-left" onclick="event.stopPropagation()">
+      <div class="drawer-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="images/logo.jpg" alt="Logo" style="height: 28px; width: auto; border-radius: 4px;" />
+          <span class="drawer-title">ADMIN MENU</span>
+        </div>
+        <button class="drawer-close-btn" onclick="closeDrawer()">✕</button>
+      </div>
+      
+      <div class="drawer-scroll-body">
+        
+        <!-- SECTION 1: OVERVIEW & SALES -->
+        <div class="drawer-menu-section">
+          <div class="drawer-section-heading">OVERVIEW &amp; SALES</div>
+          <a href="index.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span>Analytics Dashboard</span>
+          </a>
+          <a href="orders.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>Customer Orders &amp; Slip</span>
+          </a>
+        </div>
+
+        <!-- SECTION 2: MARKETING & PROMOTIONS -->
+        <div class="drawer-menu-section">
+          <div class="drawer-section-heading">MARKETING &amp; PROMOTIONS</div>
+          <a href="coupons.html" class="drawer-nav-item highlight-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+            <span>🎟️ Discount Coupons</span>
+          </a>
+          <a href="coupons.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <span>✨ Homepage Event Banners</span>
+          </a>
+          <a href="add-banner.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            <span>🖼️ Hero Slider Banners</span>
+          </a>
+        </div>
+
+        <!-- SECTION 3: CATALOG & INVENTORY -->
+        <div class="drawer-menu-section">
+          <div class="drawer-section-heading">CATALOG &amp; INVENTORY</div>
+          <a href="all-products.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            <span>All Products Catalog</span>
+          </a>
+          <a href="add-product.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            <span>+ Add New Product</span>
+          </a>
+          <a href="bulk-upload.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span>⚡ Bulk Product Upload</span>
+          </a>
+          <a href="categories.html" class="drawer-nav-item active">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            <span>Manage Categories</span>
+          </a>
+          <a href="sizes.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+            <span>Sizes &amp; Stock Matrix</span>
+          </a>
+        </div>
+
+        <!-- SECTION 4: USERS & NOTIFICATIONS -->
+        <div class="drawer-menu-section">
+          <div class="drawer-section-heading">USERS &amp; SYSTEM</div>
+          <a href="users.html" class="drawer-nav-item">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Registered Customers</span>
+          </a>
+          <button class="drawer-nav-item btn-push-drawer" onclick="requestAdminNotificationPermission()">
+            <svg viewBox="0 0 24 24" class="drawer-icon"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span>Enable Push Notifications</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.adminSupabase) {
-        window.loadTaxonomy();
-      } else {
-        document.addEventListener('adminSupabaseReady', () => {
-          window.loadTaxonomy();
-        });
+    let currentCategories = [];
+
+    function openDrawer() { document.getElementById('adminDrawer').classList.add('active'); }
+    function closeDrawer(e) { if(e) e.stopPropagation(); document.getElementById('adminDrawer').classList.remove('active'); }
+
+    function autoGenerateSlug(val) {
+      const slugInput = document.getElementById('catSlug');
+      if (slugInput && (!document.getElementById('catId').value)) {
+        slugInput.value = val.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
       }
-    });
+    }
+
+    function openCategoryModal(cat = null) {
+      const modal = document.getElementById('categoryModal');
+      const title = document.getElementById('catModalTitle');
+      const idInput = document.getElementById('catId');
+      const nameInput = document.getElementById('catName');
+      const slugInput = document.getElementById('catSlug');
+      const descInput = document.getElementById('catDesc');
+      const bannerUrlInput = document.getElementById('catBannerUrl');
+      const orderInput = document.getElementById('catOrder');
+      const activeInput = document.getElementById('catActive');
+      const previewBox = document.getElementById('bannerPreviewBox');
+      const previewImg = document.getElementById('bannerPreviewImg');
+
+      if (cat) {
+        title.textContent = 'Edit Category: ' + cat.name;
+        idInput.value = cat.id;
+        nameInput.value = cat.name;
+        slugInput.value = cat.slug;
+        descInput.value = cat.description || '';
+        bannerUrlInput.value = cat.banner_url || cat.image_url || '';
+        orderInput.value = cat.display_order || 0;
+        activeInput.checked = cat.is_active !== false;
+
+        if (cat.banner_url || cat.image_url) {
+          previewImg.src = cat.banner_url || cat.image_url;
+          previewBox.style.display = 'block';
+        } else {
+          previewBox.style.display = 'none';
+        }
+      } else {
+        title.textContent = 'Add New Category';
+        idInput.value = '';
+        nameInput.value = '';
+        slugInput.value = '';
+        descInput.value = '';
+        bannerUrlInput.value = '';
+        orderInput.value = (currentCategories.length + 1) * 10;
+        activeInput.checked = true;
+        previewBox.style.display = 'none';
+      }
+      modal.classList.add('active');
+    }
+
+    function closeCategoryModal(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('categoryModal').classList.remove('active');
+    }
+
+    function handleBannerPreview(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('bannerPreviewImg').src = e.target.result;
+          document.getElementById('bannerPreviewBox').style.display = 'block';
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    async function loadCategories() {
+      const tbody = document.getElementById('categoriesBody');
+      const { data, error } = await window.fetchAdminCategories(true);
+      if (error) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--accent-red); padding:30px;">Error loading categories: ${error.message || error}</td></tr>`;
+        return;
+      }
+
+      currentCategories = data || [];
+      if (currentCategories.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#999; padding:40px;">No categories created yet. Click "+ Add New Category" to create one.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = currentCategories.map(cat => `
+        <tr>
+          <td><strong>${cat.display_order || 0}</strong></td>
+          <td>
+            <img src="${cat.banner_url || cat.image_url || 'images/logo.jpg'}" style="width:70px; height:45px; object-fit:cover; border-radius:4px; border:1px solid #e0e0e0;" alt="${cat.name}">
+          </td>
+          <td>
+            <strong>${cat.name}</strong>
+            ${cat.description ? `<br><small style="color:#666;">${cat.description}</small>` : ''}
+          </td>
+          <td><code style="background:#f1f3f5; padding:2px 6px; border-radius:3px;">${cat.slug}</code></td>
+          <td>
+            <span class="status-badge ${cat.is_active ? 'badge-delivered' : 'badge-cancelled'}">
+              ${cat.is_active ? 'ACTIVE' : 'INACTIVE'}
+            </span>
+          </td>
+          <td style="text-align:right;">
+            <button class="btn-admin" style="padding:4px 10px; font-size:0.75rem; background:#333;" onclick='openCategoryModal(${JSON.stringify(cat)})'>Edit</button>
+            <button class="btn-admin btn-admin-danger" style="padding:4px 10px; font-size:0.75rem;" onclick="handleDeleteCategory('${cat.id}', '${cat.name}')">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function handleCategoryFormSubmit(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById('catSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'SAVING CATEGORY...';
+
+      try {
+        const id = document.getElementById('catId').value;
+        const name = document.getElementById('catName').value.trim();
+        const slug = document.getElementById('catSlug').value.trim();
+        const description = document.getElementById('catDesc').value.trim();
+        const display_order = parseInt(document.getElementById('catOrder').value) || 0;
+        const is_active = document.getElementById('catActive').checked;
+        let banner_url = document.getElementById('catBannerUrl').value.trim();
+
+        const fileInput = document.getElementById('catBannerFile');
+        if (fileInput.files && fileInput.files[0]) {
+          submitBtn.textContent = 'UPLOADING BANNER...';
+          const uploadedUrl = await window.uploadFileToStorage(fileInput.files[0], 'product-images', 'categories');
+          if (uploadedUrl) banner_url = uploadedUrl;
+        }
+
+        const payload = { id, name, slug, description, banner_url, display_order, is_active };
+        const { error } = await window.saveAdminCategory(payload);
+
+        if (error) {
+          window.adminToast('Error saving category: ' + (error.message || error), true);
+        } else {
+          window.adminToast('Category saved successfully!');
+          closeCategoryModal();
+          loadCategories();
+        }
+      } catch (err) {
+        console.error(err);
+        window.adminToast('Exception: ' + err.message, true);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'SAVE CATEGORY';
+      }
+    }
+
+    async function handleDeleteCategory(id, name) {
+      if (!confirm(`Are you sure you want to delete the category "${name}"?`)) return;
+      const { error } = await window.deleteAdminCategory(id);
+      if (error) {
+        window.adminToast('Error deleting category: ' + (error.message || error), true);
+      } else {
+        window.adminToast(`Category "${name}" deleted.`);
+        loadCategories();
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadCategories);
+    document.addEventListener('adminSupabaseReady', loadCategories);
   </script>
 </body>
 </html>
