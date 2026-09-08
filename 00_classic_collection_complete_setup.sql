@@ -1,14 +1,31 @@
 -- ==============================================================================
--- CLASSIC COLLECTION SOLAPUR - COMPLETE SUPABASE DATABASE SETUP
+-- CLASSIC COLLECTION SOLAPUR - COMPLETE SUPABASE SETUP & PERMISSIONS FIX
 -- Brand: Classic Collection Solapur (classicsolapur.com)
--- Domain: Premium Cloth Materials (Suiting, Shirting, Cotton, Linen, Khadi, Silk)
+-- Fixes: "permission denied for table ..." & RLS policy issues across all tables
 -- ==============================================================================
 
--- Enable UUID extension safely with proper quotes
+-- Enable UUID extension safely
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 1. PROFILES
+-- ==============================================================================
+-- 1. CRITICAL: GRANT FULL SCHEMA & TABLE PRIVILEGES TO anon & authenticated
+-- This completely fixes PostgreSQL error 42501 ("permission denied for table ...")
+-- ==============================================================================
+GRANT USAGE ON SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL ROUTINES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON ROUTINES TO postgres, anon, authenticated, service_role;
+
+-- ==============================================================================
+-- 2. CREATE / ENSURE ALL TABLES EXIST
+-- ==============================================================================
+
+-- 2.1 PROFILES
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     full_name TEXT,
@@ -21,7 +38,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 2. CATEGORIES / MATERIAL TYPES
+-- 2.2 CATEGORIES / MATERIAL TYPES
 CREATE TABLE IF NOT EXISTS public.categories (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL UNIQUE,
@@ -34,7 +51,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. PRODUCTS (CLOTH MATERIALS)
+-- 2.3 PRODUCTS (CLOTH MATERIALS)
 CREATE TABLE IF NOT EXISTS public.products (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
@@ -52,7 +69,7 @@ CREATE TABLE IF NOT EXISTS public.products (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 4. PRODUCT VARIANTS (FABRIC CUT LENGTHS / SIZES)
+-- 2.4 PRODUCT VARIANTS (FABRIC CUT LENGTHS / SIZES)
 CREATE TABLE IF NOT EXISTS public.product_variants (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
@@ -64,7 +81,7 @@ CREATE TABLE IF NOT EXISTS public.product_variants (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 5. PRODUCT GALLERY IMAGES
+-- 2.5 PRODUCT GALLERY IMAGES
 CREATE TABLE IF NOT EXISTS public.product_images (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
@@ -73,7 +90,7 @@ CREATE TABLE IF NOT EXISTS public.product_images (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. HERO BANNERS (HOMEPAGE BANNER SLIDER)
+-- 2.6 HERO BANNERS (HOMEPAGE BANNER SLIDER)
 CREATE TABLE IF NOT EXISTS public.banners (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
@@ -87,7 +104,7 @@ CREATE TABLE IF NOT EXISTS public.banners (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. COUPONS
+-- 2.7 COUPONS
 CREATE TABLE IF NOT EXISTS public.coupons (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code TEXT NOT NULL UNIQUE,
@@ -100,7 +117,7 @@ CREATE TABLE IF NOT EXISTS public.coupons (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 8. ORDERS
+-- 2.8 ORDERS
 CREATE TABLE IF NOT EXISTS public.orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_number TEXT NOT NULL UNIQUE,
@@ -122,7 +139,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 9. ORDER ITEMS
+-- 2.9 ORDER ITEMS
 CREATE TABLE IF NOT EXISTS public.order_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL REFERENCES public.orders(id) ON DELETE CASCADE,
@@ -137,7 +154,7 @@ CREATE TABLE IF NOT EXISTS public.order_items (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 10. PAYMENTS
+-- 2.10 PAYMENTS
 CREATE TABLE IF NOT EXISTS public.payments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID REFERENCES public.orders(id) ON DELETE SET NULL,
@@ -150,7 +167,7 @@ CREATE TABLE IF NOT EXISTS public.payments (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 11. ADMIN PWA PUSH SUBSCRIPTIONS
+-- 2.11 ADMIN PWA PUSH SUBSCRIPTIONS
 CREATE TABLE IF NOT EXISTS public.admin_push_subscriptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_agent TEXT,
@@ -160,7 +177,7 @@ CREATE TABLE IF NOT EXISTS public.admin_push_subscriptions (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 12. STORE SETTINGS
+-- 2.12 STORE SETTINGS
 CREATE TABLE IF NOT EXISTS public.store_settings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     delivery_fee NUMERIC(10, 2) DEFAULT 60.00,
@@ -169,7 +186,29 @@ CREATE TABLE IF NOT EXISTS public.store_settings (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- RLS CONFIGURATION
+-- Re-grant on newly created tables
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+
+-- ==============================================================================
+-- 3. DROP ALL RESTRICTIVE / CONFLICTING POLICIES FROM PREVIOUS VERSIONS
+-- ==============================================================================
+DO $$ 
+DECLARE
+  pol RECORD;
+BEGIN
+  FOR pol IN 
+    SELECT policyname, tablename 
+    FROM pg_policies 
+    WHERE schemaname = 'public'
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', pol.policyname, pol.tablename);
+  END LOOP;
+END $$;
+
+-- ==============================================================================
+-- 4. ENABLE RLS AND CREATE PERMISSIVE CRUD POLICIES FOR STOREFRONT & ADMIN
+-- ==============================================================================
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
@@ -183,35 +222,46 @@ ALTER TABLE public.payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.admin_push_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.store_settings ENABLE ROW LEVEL SECURITY;
 
--- CLEAN EXISTING POLICIES
-DROP POLICY IF EXISTS "Public Full Profiles" ON public.profiles;
-DROP POLICY IF EXISTS "Public Full Categories" ON public.categories;
-DROP POLICY IF EXISTS "Public Full Products" ON public.products;
-DROP POLICY IF EXISTS "Public Full Product Variants" ON public.product_variants;
-DROP POLICY IF EXISTS "Public Full Product Images" ON public.product_images;
-DROP POLICY IF EXISTS "Public Full Banners" ON public.banners;
-DROP POLICY IF EXISTS "Public Full Coupons" ON public.coupons;
-DROP POLICY IF EXISTS "Public Full Orders" ON public.orders;
-DROP POLICY IF EXISTS "Public Full Order Items" ON public.order_items;
-DROP POLICY IF EXISTS "Public Full Payments" ON public.payments;
-DROP POLICY IF EXISTS "Public Full Push Subscriptions" ON public.admin_push_subscriptions;
-DROP POLICY IF EXISTS "Public Full Store Settings" ON public.store_settings;
+CREATE POLICY "Public Full Profiles" ON public.profiles FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Categories" ON public.categories FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Products" ON public.products FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Product Variants" ON public.product_variants FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Product Images" ON public.product_images FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Banners" ON public.banners FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Coupons" ON public.coupons FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Orders" ON public.orders FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Order Items" ON public.order_items FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Payments" ON public.payments FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Push Subscriptions" ON public.admin_push_subscriptions FOR ALL TO public USING (true) WITH CHECK (true);
+CREATE POLICY "Public Full Store Settings" ON public.store_settings FOR ALL TO public USING (true) WITH CHECK (true);
 
--- POLICIES ALLOWING PUBLIC READ & ADMIN FULL ACCESS
-CREATE POLICY "Public Full Profiles" ON public.profiles FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Full Categories" ON public.categories FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Full Products" ON public.products FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Full Product Variants" ON public.product_variants FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Full Product Images" ON public.product_images FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Full Banners" ON public.banners FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Full Coupons" ON public.coupons FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Full Orders" ON public.orders FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Full Order Items" ON public.order_items FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Full Payments" ON public.payments FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Full Push Subscriptions" ON public.admin_push_subscriptions FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "Public Full Store Settings" ON public.store_settings FOR ALL USING (true) WITH CHECK (true);
+-- ==============================================================================
+-- 5. STORAGE BUCKETS SETUP (product-images & banner-images)
+-- ==============================================================================
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES 
+  ('product-images', 'product-images', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']),
+  ('banner-images', 'banner-images', true, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'])
+ON CONFLICT (id) DO UPDATE SET 
+  public = true,
+  file_size_limit = 10485760,
+  allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
 
--- SEED DATA: CLOTH MATERIAL CATEGORIES
+DROP POLICY IF EXISTS "Public Read Product Images" ON storage.objects;
+DROP POLICY IF EXISTS "Public Insert Product Images" ON storage.objects;
+DROP POLICY IF EXISTS "Public Update Product Images" ON storage.objects;
+DROP POLICY IF EXISTS "Public Delete Product Images" ON storage.objects;
+DROP POLICY IF EXISTS "Public Full Storage Access" ON storage.objects;
+
+CREATE POLICY "Public Full Storage Access"
+ON storage.objects FOR ALL
+TO public
+USING (bucket_id IN ('product-images', 'banner-images'))
+WITH CHECK (bucket_id IN ('product-images', 'banner-images'));
+
+-- ==============================================================================
+-- 6. SEED DATA: CLOTH MATERIAL CATEGORIES
+-- ==============================================================================
 INSERT INTO public.categories (id, name, slug, description, image_url, display_order)
 VALUES 
   ('c1000000-0000-0000-0000-000000000001', 'Suiting', 'suiting', 'Men''s Premium Formal & Safari Suiting Material', 'images/hero1.jpg', 1),
@@ -226,7 +276,9 @@ ON CONFLICT (slug) DO UPDATE SET
   description = EXCLUDED.description,
   image_url = EXCLUDED.image_url;
 
--- SEED DATA: HERO BANNERS
+-- ==============================================================================
+-- 7. SEED DATA: HERO BANNERS
+-- ==============================================================================
 INSERT INTO public.banners (title, subtitle, image_url, link_url, badge_text, display_order, is_active)
 VALUES
   ('CLASSIC MEN''S FORMAL FABRICS', 'PREMIUM COTTON, LINEN & KHADI SUITING MATERIALS', 'images/hero1.jpg', 'suiting.html', 'NEW ARRIVALS 2026', 1, true),
@@ -234,7 +286,9 @@ VALUES
   ('CASUAL SHIRTING & LINEN COTTON', 'BREATHABLE WEAVES DESIGNED FOR TIMELESS COMFORT', 'images/hero3.jpg', 'shirting.html', 'LIMITED EDITION', 3, true)
 ON CONFLICT DO NOTHING;
 
--- SEED DATA: SAMPLE CLOTH MATERIAL PRODUCTS
+-- ==============================================================================
+-- 8. SEED DATA: SAMPLE CLOTH MATERIAL PRODUCTS
+-- ==============================================================================
 INSERT INTO public.products (id, category_id, name, slug, description, price, mrp, main_image, is_featured, is_new_arrival, status)
 VALUES
   (
@@ -304,7 +358,9 @@ VALUES
   )
 ON CONFLICT (slug) DO NOTHING;
 
--- SEED DATA: VARIANTS (FABRIC CUT LENGTHS)
+-- ==============================================================================
+-- 9. SEED DATA: VARIANTS (FABRIC CUT LENGTHS)
+-- ==============================================================================
 INSERT INTO public.product_variants (product_id, size, color, stock_quantity)
 VALUES
   ('a1000000-0000-0000-0000-000000000000', 'SAMPLE', 'White', 9999),
@@ -319,12 +375,13 @@ VALUES
   ('a1000000-0000-0000-0000-000000000004', '2.5M (Kurta)', 'Natural Beige', 20)
 ON CONFLICT DO NOTHING;
 
--- SEED DATA: COUPONS
+-- ==============================================================================
+-- 10. SEED DATA: COUPONS & SETTINGS
+-- ==============================================================================
 INSERT INTO public.coupons (code, discount_type, discount_value, min_order_amount)
 VALUES ('CLASSIC10', 'percentage', 10.00, 499.00)
 ON CONFLICT (code) DO NOTHING;
 
--- SEED DATA: DEFAULT STORE SETTINGS
 INSERT INTO public.store_settings (delivery_fee, free_shipping_above)
 VALUES (60.00, 999.00)
 ON CONFLICT DO NOTHING;
