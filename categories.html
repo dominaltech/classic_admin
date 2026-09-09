@@ -337,7 +337,7 @@
         <tr>
           <td><strong>${cat.display_order || 0}</strong></td>
           <td>
-            <img src="${cat.banner_url || cat.image_url || 'images/logo.jpg'}" style="width:70px; height:45px; object-fit:cover; border-radius:4px; border:1px solid #e0e0e0;" alt="${cat.name}">
+            <img src="${cat.banner_url || cat.image_url || 'images/logo.png'}" style="width:70px; height:45px; object-fit:cover; border-radius:4px; border:1px solid #e0e0e0;" alt="${cat.name}">
           </td>
           <td>
             <strong>${cat.name}</strong>
@@ -350,11 +350,16 @@
             </span>
           </td>
           <td style="text-align:right;">
-            <button class="btn-admin" style="padding:4px 10px; font-size:0.75rem; background:#333;" onclick='openCategoryModal(${JSON.stringify(cat)})'>Edit</button>
+            <button class="btn-admin" style="padding:4px 10px; font-size:0.75rem; background:#333;" onclick="openCategoryModalById('${cat.id}')">Edit</button>
             <button class="btn-admin btn-admin-danger" style="padding:4px 10px; font-size:0.75rem;" onclick="handleDeleteCategory('${cat.id}', '${cat.name}')">Delete</button>
           </td>
         </tr>
       `).join('');
+    }
+
+    function openCategoryModalById(id) {
+      const cat = currentCategories.find(c => c.id === id);
+      openCategoryModal(cat);
     }
 
     async function handleCategoryFormSubmit(e) {

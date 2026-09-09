@@ -16,7 +16,7 @@
   <header class="admin-header">
     <div class="header-left">
       <button class="menu-trigger-btn" onclick="openDrawer()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-      <div class="brand-logo"><img src="images/logo.jpg" alt="Classic Collection Solapur Logo"><span class="brand-name">CLASSIC COLLECTION SOLAPUR ADMIN</span></div>
+      <div class="brand-logo"><img src="images/logo.png" alt="Classic Collection Solapur" style="height:38px;width:auto;object-fit:contain;"><span class="brand-name">CLASSIC COLLECTION SOLAPUR ADMIN</span></div>
     </div>
   </header>
 
@@ -201,7 +201,73 @@
     </div>
   </div>
 
+  <!-- EDIT BANNER MODAL -->
+  <div class="drawer-overlay" id="editBannerModal" style="display: none; align-items: center; justify-content: center; z-index: 1000;" onclick="closeEditBannerModal(event)">
+    <div style="background: #ffffff; width: 95%; max-width: 550px; border-radius: var(--radius-md); padding: 28px; box-shadow: var(--shadow-lg); max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-light); padding-bottom: 12px;">
+        <h3 style="font-family: var(--font-heading); font-size: 1.3rem; font-weight: 800; margin: 0;">EDIT SLIDER BANNER</h3>
+        <button type="button" onclick="closeEditBannerModal()" style="background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #666;">✕</button>
+      </div>
+
+      <form id="editBannerForm">
+        <input type="hidden" id="editBanId">
+
+        <div class="form-group">
+          <label>Banner Title *</label>
+          <input type="text" id="editBanTitle" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label>Subtitle</label>
+          <input type="text" id="editBanSub" class="form-control">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label>Badge Text</label>
+            <input type="text" id="editBanBadge" class="form-control">
+          </div>
+          <div class="form-group">
+            <label>Target Page Link</label>
+            <input type="text" id="editBanLink" class="form-control">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Current Banner Image</label>
+          <div id="editBanImgPreviewBox" style="margin-bottom: 10px;">
+            <img id="editBanImgPreview" src="" alt="Banner Preview" style="width: 100%; height: 130px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">
+          </div>
+          <label>Replace Image (Optional)</label>
+          <input type="file" id="editBanImgFile" class="form-control" accept="image/*" onchange="handleEditBannerPreview(this)">
+          <input type="text" id="editBanImgUrl" class="form-control" style="margin-top: 8px;" placeholder="Or paste image URL directly">
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label>Display Priority / Order</label>
+            <input type="number" id="editBanOrder" class="form-control" value="0">
+          </div>
+          <div class="form-group" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: center;">
+            <label style="margin-bottom: 6px;">Visibility</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 700;">
+              <input type="checkbox" id="editBanActive" checked style="width: 18px; height: 18px;">
+              <span>Active on Website</span>
+            </label>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px;">
+          <button type="button" class="btn-admin" style="flex: 1; background: #666;" onclick="closeEditBannerModal()">CANCEL</button>
+          <button type="submit" id="updateBannerBtn" class="btn-admin btn-admin-success" style="flex: 2; padding: 12px;">SAVE CHANGES</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
+    let currentBanners = [];
+
     async function loadBanners() {
       const tbody = document.getElementById('bannersBody');
       const client = window.urSbClient || window.adminSupabase;
@@ -213,25 +279,111 @@
           .select('*')
           .order('display_order', { ascending: true });
 
-        if (!banners || banners.length === 0) {
+        currentBanners = banners || [];
+
+        if (currentBanners.length === 0) {
           tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">No banners found.</td></tr>';
           return;
         }
 
-        tbody.innerHTML = banners.map(b => `
+        tbody.innerHTML = currentBanners.map(b => `
           <tr>
-            <td><img src="${b.image_url || 'images/logo.jpg'}" style="width: 90px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;"></td>
+            <td><img src="${b.image_url || 'images/logo.png'}" style="width: 90px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;"></td>
             <td><strong>${b.title}</strong></td>
             <td><small>${b.subtitle || '-'}</small></td>
             <td><span class="status-badge badge-placed">${b.badge_text || 'BANNER'}</span></td>
             <td><small>${b.link_url || '#'}</small></td>
-            <td>
+            <td style="white-space: nowrap;">
+              <button onclick="openEditBannerModal('${b.id}')" class="btn-admin" style="background: #111111; color: #fff; padding: 6px 14px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 0.75rem; margin-right: 6px;">EDIT</button>
               <button onclick="deleteBanner('${b.id}')" style="background: var(--accent-red); color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-weight: 700; cursor: pointer; font-size: 0.75rem;">DELETE</button>
             </td>
           </tr>
         `).join('');
       } catch(e) { console.error(e); }
     }
+
+    function openEditBannerModal(id) {
+      const b = currentBanners.find(item => item.id === id);
+      if (!b) return;
+      document.getElementById('editBanId').value = b.id;
+      document.getElementById('editBanTitle').value = b.title || '';
+      document.getElementById('editBanSub').value = b.subtitle || '';
+      document.getElementById('editBanBadge').value = b.badge_text || '';
+      document.getElementById('editBanLink').value = b.link_url || '';
+      document.getElementById('editBanOrder').value = b.display_order || 0;
+      document.getElementById('editBanActive').checked = b.is_active !== false;
+      document.getElementById('editBanImgPreview').src = b.image_url || 'images/logo.png';
+      document.getElementById('editBanImgUrl').value = b.image_url || '';
+      document.getElementById('editBanImgFile').value = '';
+      document.getElementById('editBannerModal').style.display = 'flex';
+    }
+
+    function closeEditBannerModal(e) {
+      if (e && e.target !== e.currentTarget) return;
+      document.getElementById('editBannerModal').style.display = 'none';
+    }
+
+    function handleEditBannerPreview(input) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          document.getElementById('editBanImgPreview').src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    document.getElementById('editBannerForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const updateBtn = document.getElementById('updateBannerBtn');
+      updateBtn.disabled = true;
+      updateBtn.textContent = 'SAVING CHANGES...';
+
+      try {
+        const id = document.getElementById('editBanId').value;
+        const title = document.getElementById('editBanTitle').value.trim();
+        const subtitle = document.getElementById('editBanSub').value.trim();
+        const badge_text = document.getElementById('editBanBadge').value.trim();
+        const link_url = document.getElementById('editBanLink').value.trim();
+        const display_order = parseInt(document.getElementById('editBanOrder').value) || 0;
+        const is_active = document.getElementById('editBanActive').checked;
+        let imageUrl = document.getElementById('editBanImgUrl').value.trim() || document.getElementById('editBanImgPreview').src;
+
+        const imgInput = document.getElementById('editBanImgFile');
+        if (imgInput.files && imgInput.files.length > 0) {
+          updateBtn.textContent = 'UPLOADING NEW IMAGE...';
+          const uploadedUrl = await window.uploadFileToStorage(imgInput.files[0], 'banner-images', 'banners');
+          if (uploadedUrl) imageUrl = uploadedUrl;
+        }
+
+        const client = window.urSbClient || window.adminSupabase;
+        if (client) {
+          const { error } = await client.from('banners').update({
+            title,
+            subtitle,
+            badge_text,
+            link_url,
+            image_url: imageUrl,
+            display_order,
+            is_active
+          }).eq('id', id);
+
+          if (error) {
+            window.adminToast('Error updating banner: ' + error.message, true);
+          } else {
+            window.adminToast('Banner updated successfully!');
+            closeEditBannerModal();
+            loadBanners();
+          }
+        }
+      } catch(err) {
+        console.error(err);
+        window.adminToast('Error: ' + err.message, true);
+      } finally {
+        updateBtn.disabled = false;
+        updateBtn.textContent = 'SAVE CHANGES';
+      }
+    });
 
     document.getElementById('addBannerForm').addEventListener('submit', async function(e) {
       e.preventDefault();
@@ -246,7 +398,7 @@
         const link_url = document.getElementById('banLink').value.trim();
 
         const imgInput = document.getElementById('banImgFile');
-        let imageUrl = 'images/logo.jpg';
+        let imageUrl = 'images/logo.png';
         if (imgInput.files && imgInput.files.length > 0) {
           const uploadedUrl = await window.uploadFileToStorage(imgInput.files[0], 'banner-images', 'banners');
           if (uploadedUrl) imageUrl = uploadedUrl;
