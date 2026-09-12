@@ -8,9 +8,9 @@
 CREATE OR REPLACE FUNCTION public.auto_confirm_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Automatically set email_confirmed_at and confirmed_at so no verification link is needed
+  -- Automatically set email_confirmed_at so no verification link is needed.
+  -- Note: confirmed_at is a GENERATED column in Postgres and updates automatically from email_confirmed_at.
   NEW.email_confirmed_at = COALESCE(NEW.email_confirmed_at, now());
-  NEW.confirmed_at = COALESCE(NEW.confirmed_at, now());
   
   -- Clear any confirmation token requirements
   NEW.confirmation_token = NULL;
@@ -45,7 +45,6 @@ DECLARE
 BEGIN
   UPDATE auth.users
   SET email_confirmed_at = COALESCE(email_confirmed_at, now()),
-      confirmed_at = COALESCE(confirmed_at, now()),
       confirmation_token = NULL
   WHERE LOWER(email) = LOWER(user_email)
   RETURNING id INTO v_user_id;
@@ -102,7 +101,6 @@ CREATE TRIGGER on_auth_user_created
 -- ==============================================================================
 UPDATE auth.users
 SET email_confirmed_at = COALESCE(email_confirmed_at, now()),
-    confirmed_at = COALESCE(confirmed_at, now()),
     confirmation_token = NULL
 WHERE email_confirmed_at IS NULL;
 
