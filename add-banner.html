@@ -60,6 +60,7 @@
         <div class="form-group">
           <label>Banner Image Upload *</label>
           <input type="file" id="banImgFile" class="form-control" accept="image/*" required>
+          <small style="display: block; margin-top: 5px; color: var(--text-muted); font-size: 11.5px; font-weight: 500;">Tip: Square images (1:1 aspect ratio, e.g. 1000×1000px or 800×800px) provide the best visual experience on PC &amp; Mobile slider showcase.</small>
         </div>
         <button type="submit" id="saveBannerBtn" class="btn-admin" style="width: 100%; padding: 12px;">SAVE & PUBLISH BANNER</button>
       </form>
@@ -240,6 +241,7 @@
           </div>
           <label>Replace Image (Choose file to upload new image)</label>
           <input type="file" id="editBanImgFile" class="form-control" accept="image/*" onchange="handleEditBannerPreview(this)">
+          <small style="display: block; margin-top: 5px; color: var(--text-muted); font-size: 11.5px; font-weight: 500;">Tip: Square images (1:1 aspect ratio, e.g. 1000×1000px or 800×800px) recommended.</small>
           <input type="text" id="editBanImgUrl" class="form-control" style="margin-top: 8px;" placeholder="Or paste image URL directly">
         </div>
 
