@@ -18,8 +18,8 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div class="brand-logo">
-        <img src="images/logo.jpg" alt="Classic Collection Solapur Logo" style="height:32px;width:auto;object-fit:contain;">
-        <span class="brand-name">CLASSIC COLLECTION SOLAPUR ADMIN</span>
+        <img src="images/logo.png" alt="Classic Collection" style="height:36px;width:auto;object-fit:contain;">
+        <span class="admin-pill" style="background:rgba(212,175,55,0.15);color:#D4AF37;border:1px solid rgba(212,175,55,0.4);font-size:10px;font-weight:800;letter-spacing:1.5px;padding:3px 8px;border-radius:4px;text-transform:uppercase;">ADMIN</span>
       </div>
     </div>
     <div style="display:flex; gap:10px;">
@@ -32,12 +32,12 @@
   <nav class="admin-nav-tabs">
     <a href="index.html" class="admin-nav-tab">Dashboard</a>
     <a href="orders.html" class="admin-nav-tab">Orders</a>
-    <a href="coupons.html" class="admin-nav-tab">🎟️ Coupons &amp; Banners</a>
+    <a href="coupons.html" class="admin-nav-tab"> Coupons &amp; Banners</a>
     <a href="all-products.html" class="admin-nav-tab">All Products</a>
     <a href="categories.html" class="admin-nav-tab active">Categories</a>
     <a href="sizes.html" class="admin-nav-tab">Sizes &amp; Stock</a>
     <a href="add-product.html" class="admin-nav-tab">+ Add Product</a>
-    <a href="bulk-upload.html" class="admin-nav-tab bulk-highlight">⚡ Bulk Upload</a>
+    <a href="bulk-upload.html" class="admin-nav-tab bulk-highlight"> Bulk Upload</a>
     <a href="add-banner.html" class="admin-nav-tab">Hero Banners</a>
     <a href="users.html" class="admin-nav-tab">Users</a>
   </nav>
@@ -82,7 +82,7 @@
     <div class="admin-modal-card" onclick="event.stopPropagation()">
       <div class="admin-modal-header">
         <h3 class="admin-modal-title" id="catModalTitle">Add New Category</h3>
-        <button class="modal-close-btn" onclick="closeCategoryModal()">✕</button>
+        <button class="modal-close-btn" onclick="closeCategoryModal()">×</button>
       </div>
 
       <form id="categoryForm" onsubmit="handleCategoryFormSubmit(event)">
@@ -170,7 +170,7 @@
           <img src="images/logo.jpg" alt="Logo" style="height: 28px; width: auto; border-radius: 4px;" />
           <span class="drawer-title">ADMIN MENU</span>
         </div>
-        <button class="drawer-close-btn" onclick="closeDrawer()">✕</button>
+        <button class="drawer-close-btn" onclick="closeDrawer()">×</button>
       </div>
       
       <div class="drawer-scroll-body">
@@ -193,15 +193,15 @@
           <div class="drawer-section-heading">MARKETING &amp; PROMOTIONS</div>
           <a href="coupons.html" class="drawer-nav-item highlight-item">
             <svg viewBox="0 0 24 24" class="drawer-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            <span>🎟️ Discount Coupons</span>
+            <span>Discount Coupons</span>
           </a>
           <a href="coupons.html" class="drawer-nav-item">
             <svg viewBox="0 0 24 24" class="drawer-icon"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <span>✨ Homepage Event Banners</span>
+            <span>Homepage Event Banners</span>
           </a>
           <a href="add-banner.html" class="drawer-nav-item">
             <svg viewBox="0 0 24 24" class="drawer-icon"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            <span>🖼️ Hero Slider Banners</span>
+            <span>Hero Slider Banners</span>
           </a>
         </div>
 
@@ -218,7 +218,7 @@
           </a>
           <a href="bulk-upload.html" class="drawer-nav-item">
             <svg viewBox="0 0 24 24" class="drawer-icon"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            <span>⚡ Bulk Product Upload</span>
+            <span>Bulk Product Upload</span>
           </a>
           <a href="categories.html" class="drawer-nav-item active">
             <svg viewBox="0 0 24 24" class="drawer-icon"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -346,8 +346,7 @@
           <td><code style="background:#f1f3f5; padding:2px 6px; border-radius:3px;">${cat.slug}</code></td>
           <td>
             <span class="status-badge ${cat.is_active ? 'badge-delivered' : 'badge-cancelled'}">
-              ${cat.is_active ? 'ACTIVE' : 'INACTIVE'}
-            </span>
+              ${cat.is_active ? 'ACTIVE' : 'INACTIVE'}</span>
           </td>
           <td style="text-align:right;">
             <button class="btn-admin" style="padding:4px 10px; font-size:0.75rem; background:#333;" onclick="openCategoryModalById('${cat.id}')">Edit</button>

@@ -16,7 +16,7 @@
   <header class="admin-header">
     <div class="header-left">
       <button class="menu-trigger-btn" onclick="openDrawer()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-      <div class="brand-logo"><img src="images/logo.png" alt="Classic Collection Solapur" style="height:38px;width:auto;object-fit:contain;"><span class="brand-name">CLASSIC COLLECTION SOLAPUR ADMIN</span></div>
+      <div class="brand-logo"><img src="images/logo.png" alt="Classic Collection" style="height:36px;width:auto;object-fit:contain;"><span class="admin-pill" style="background:rgba(212,175,55,0.15);color:#D4AF37;border:1px solid rgba(212,175,55,0.4);font-size:10px;font-weight:800;letter-spacing:1.5px;padding:3px 8px;border-radius:4px;text-transform:uppercase;">ADMIN</span></div>
     </div>
   </header>
 
@@ -24,12 +24,12 @@
   <nav class="admin-nav-tabs">
     <a href="index.html" class="admin-nav-tab">Dashboard</a>
     <a href="orders.html" class="admin-nav-tab">Orders</a>
-    <a href="coupons.html" class="admin-nav-tab">🎟️ Coupons &amp; Banners</a>
+    <a href="coupons.html" class="admin-nav-tab">Coupons &amp; Banners</a>
     <a href="all-products.html" class="admin-nav-tab">All Products</a>
     <a href="categories.html" class="admin-nav-tab">Categories</a>
     <a href="sizes.html" class="admin-nav-tab">Sizes &amp; Stock</a>
     <a href="add-product.html" class="admin-nav-tab">+ Add Product</a>
-    <a href="bulk-upload.html" class="admin-nav-tab bulk-highlight">⚡ Bulk Upload</a>
+    <a href="bulk-upload.html" class="admin-nav-tab bulk-highlight">Bulk Upload</a>
     <a href="add-banner.html" class="admin-nav-tab active">Hero Banners</a>
     <a href="users.html" class="admin-nav-tab">Users</a>
   </nav>
@@ -124,7 +124,7 @@
           <img src="images/logo.jpg" alt="Logo" style="height: 28px; width: auto; border-radius: 4px;" />
           <span class="drawer-title">ADMIN MENU</span>
         </div>
-        <button class="drawer-close-btn" onclick="closeDrawer()">✕</button>
+        <button class="drawer-close-btn" onclick="closeDrawer()">×</button>
       </div>
       
       <div class="drawer-scroll-body">
@@ -147,15 +147,15 @@
           <div class="drawer-section-heading">MARKETING &amp; PROMOTIONS</div>
           <a href="coupons.html" class="drawer-nav-item highlight-item">
             <svg viewBox="0 0 24 24" class="drawer-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            <span>🎟️ Discount Coupons</span>
+            <span>Discount Coupons</span>
           </a>
           <a href="coupons.html" class="drawer-nav-item">
             <svg viewBox="0 0 24 24" class="drawer-icon"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <span>✨ Homepage Event Banners</span>
+            <span>Homepage Event Banners</span>
           </a>
           <a href="add-banner.html" class="drawer-nav-item active">
             <svg viewBox="0 0 24 24" class="drawer-icon"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            <span>🖼️ Hero Slider Banners</span>
+            <span>Hero Slider Banners</span>
           </a>
         </div>
 
@@ -172,7 +172,7 @@
           </a>
           <a href="bulk-upload.html" class="drawer-nav-item">
             <svg viewBox="0 0 24 24" class="drawer-icon"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            <span>⚡ Bulk Product Upload</span>
+            <span>Bulk Product Upload</span>
           </a>
           <a href="categories.html" class="drawer-nav-item">
             <svg viewBox="0 0 24 24" class="drawer-icon"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -206,7 +206,7 @@
     <div style="background: #ffffff; width: 95%; max-width: 550px; border-radius: var(--radius-md); padding: 28px; box-shadow: var(--shadow-lg); max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-light); padding-bottom: 12px;">
         <h3 style="font-family: var(--font-heading); font-size: 1.3rem; font-weight: 800; margin: 0;">EDIT SLIDER BANNER</h3>
-        <button type="button" onclick="closeEditBannerModal()" style="background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #666;">✕</button>
+        <button type="button" onclick="closeEditBannerModal()" style="background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #666;">×</button>
       </div>
 
       <form id="editBannerForm">
@@ -388,35 +388,53 @@
     document.getElementById('addBannerForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const saveBtn = document.getElementById('saveBannerBtn');
-      saveBtn.disabled = true;
-      saveBtn.textContent = 'UPLOADING & SAVING...';
 
       try {
         const title = document.getElementById('banTitle').value.trim();
         const subtitle = document.getElementById('banSub').value.trim();
         const badge_text = document.getElementById('banBadge').value.trim();
-        const link_url = document.getElementById('banLink').value.trim();
+        const link_url = document.getElementById('banLink').value.trim() || 'shop.html';
 
         const imgInput = document.getElementById('banImgFile');
-        let imageUrl = 'images/logo.png';
-        if (imgInput.files && imgInput.files.length > 0) {
-          const uploadedUrl = await window.uploadFileToStorage(imgInput.files[0], 'banner-images', 'banners');
-          if (uploadedUrl) imageUrl = uploadedUrl;
+        if (!imgInput.files || imgInput.files.length === 0) {
+          window.adminToast('Please select a banner image file to upload.', true);
+          return;
         }
 
-        const client = window.urSbClient || window.adminSupabase;
-        if (client) {
-          const { error } = await client.from('banners').insert([{
-            title, subtitle, badge_text, link_url, image_url: imageUrl, display_order: Date.now(), is_active: true
-          }]);
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'UPLOADING IMAGE...';
 
-          if (error) {
-            window.adminToast('Error adding banner: ' + error.message, true);
-          } else {
-            window.adminToast('Banner saved successfully!');
-            document.getElementById('addBannerForm').reset();
-            loadBanners();
-          }
+        const uploadedUrl = await window.uploadFileToStorage(imgInput.files[0], 'banner-images', 'banners');
+        if (!uploadedUrl) {
+          throw new Error('Image upload failed. Please check storage bucket & permissions.');
+        }
+
+        saveBtn.textContent = 'SAVING BANNER...';
+
+        // Use safe sequential order (prevents 32-bit INT overflow from Date.now())
+        const nextOrder = (currentBanners && currentBanners.length > 0)
+          ? Math.max(0, ...currentBanners.map(b => parseInt(b.display_order) || 0)) + 1
+          : 1;
+
+        const client = window.urSbClient || window.adminSupabase;
+        if (!client) throw new Error('Database client not connected.');
+
+        const { error } = await client.from('banners').insert([{
+          title,
+          subtitle,
+          badge_text,
+          link_url,
+          image_url: uploadedUrl,
+          display_order: nextOrder,
+          is_active: true
+        }]);
+
+        if (error) {
+          window.adminToast('Error adding banner: ' + error.message, true);
+        } else {
+          window.adminToast('Hero banner published successfully!');
+          document.getElementById('addBannerForm').reset();
+          loadBanners();
         }
       } catch(err) {
         console.error(err);

@@ -132,7 +132,7 @@
   <header class="admin-header">
     <div class="header-left">
       <button class="menu-trigger-btn" onclick="openDrawer()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-      <div class="brand-logo"><img src="images/logo.png" alt="Classic Collection Solapur" style="height:38px;width:auto;object-fit:contain;"><span class="brand-name">CLASSIC COLLECTION SOLAPUR ADMIN</span></div>
+      <div class="brand-logo"><img src="images/logo.png" alt="Classic Collection" style="height:36px;width:auto;object-fit:contain;"><span class="admin-pill" style="background:rgba(212,175,55,0.15);color:#D4AF37;border:1px solid rgba(212,175,55,0.4);font-size:10px;font-weight:800;letter-spacing:1.5px;padding:3px 8px;border-radius:4px;text-transform:uppercase;">ADMIN</span></div>
     </div>
     <div style="display: flex; align-items: center; gap: 12px;">
       <button class="btn-admin" onclick="loadOrders()" style="padding: 6px 12px; font-size: 0.8rem; background: #222; border: 1px solid #444;">
@@ -146,12 +146,12 @@
   <nav class="admin-nav-tabs">
     <a href="index.html" class="admin-nav-tab">Dashboard</a>
     <a href="orders.html" class="admin-nav-tab active">Orders</a>
-    <a href="coupons.html" class="admin-nav-tab">🎟️ Coupons &amp; Banners</a>
+    <a href="coupons.html" class="admin-nav-tab"> Coupons &amp; Banners</a>
     <a href="all-products.html" class="admin-nav-tab">All Products</a>
     <a href="categories.html" class="admin-nav-tab">Categories</a>
     <a href="sizes.html" class="admin-nav-tab">Sizes &amp; Stock</a>
     <a href="add-product.html" class="admin-nav-tab">+ Add Product</a>
-    <a href="bulk-upload.html" class="admin-nav-tab bulk-highlight">⚡ Bulk Upload</a>
+    <a href="bulk-upload.html" class="admin-nav-tab bulk-highlight"> Bulk Upload</a>
     <a href="add-banner.html" class="admin-nav-tab">Hero Banners</a>
     <a href="users.html" class="admin-nav-tab">Users</a>
   </nav>
@@ -239,7 +239,7 @@
           <span class="admin-modal-title" id="modalOrderNumber">ORDER DETAILS</span>
           <div style="font-size: 0.8rem; color: #666;" id="modalOrderDate">Date: -</div>
         </div>
-        <button class="modal-close-btn" onclick="closeOrderModal()">✕</button>
+        <button class="modal-close-btn" onclick="closeOrderModal()">×</button>
       </div>
 
       <div class="admin-modal-body" id="modalOrderBody">
@@ -284,7 +284,7 @@
           <img src="images/logo.jpg" alt="Logo" style="height: 28px; width: auto; border-radius: 4px;" />
           <span class="drawer-title">ADMIN MENU</span>
         </div>
-        <button class="drawer-close-btn" onclick="closeDrawer()">✕</button>
+        <button class="drawer-close-btn" onclick="closeDrawer()">×</button>
       </div>
       
       <div class="drawer-scroll-body">
@@ -307,15 +307,15 @@
           <div class="drawer-section-heading">MARKETING &amp; PROMOTIONS</div>
           <a href="coupons.html" class="drawer-nav-item highlight-item">
             <svg viewBox="0 0 24 24" class="drawer-icon"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-            <span>🎟️ Discount Coupons</span>
+            <span>Discount Coupons</span>
           </a>
           <a href="coupons.html" class="drawer-nav-item">
             <svg viewBox="0 0 24 24" class="drawer-icon"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            <span>✨ Homepage Event Banners</span>
+            <span>Homepage Event Banners</span>
           </a>
           <a href="add-banner.html" class="drawer-nav-item">
             <svg viewBox="0 0 24 24" class="drawer-icon"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-            <span>🖼️ Hero Slider Banners</span>
+            <span>Hero Slider Banners</span>
           </a>
         </div>
 
@@ -332,7 +332,7 @@
           </a>
           <a href="bulk-upload.html" class="drawer-nav-item">
             <svg viewBox="0 0 24 24" class="drawer-icon"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-            <span>⚡ Bulk Product Upload</span>
+            <span>Bulk Product Upload</span>
           </a>
           <a href="categories.html" class="drawer-nav-item">
             <svg viewBox="0 0 24 24" class="drawer-icon"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
@@ -509,11 +509,11 @@
         
         let paymentBadge = '';
         if (payStatus === 'PAID') {
-          paymentBadge = `<span class="badge-paid" style="background:#15803d;color:#ffffff;padding:3px 7px;font-size:0.68rem;border-radius:4px;font-weight:800;letter-spacing:0.5px;display:inline-block;">PAID ONLINE ✓</span>`;
+          paymentBadge = `<span class="badge-paid" style="background:#15803d;color:#ffffff;padding:3px 7px;font-size:0.68rem;border-radius:4px;font-weight:800;letter-spacing:0.5px;display:inline-block;">PAID ONLINE</span>`;
         } else if (payStatus === 'FAILED' || o.order_status === 'CANCELLED') {
-          paymentBadge = `<span class="badge-cancelled" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;padding:3px 7px;font-size:0.68rem;border-radius:4px;font-weight:800;letter-spacing:0.5px;display:inline-block;">PAYMENT CANCELLED ✕</span>`;
+          paymentBadge = `<span class="badge-cancelled" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;padding:3px 7px;font-size:0.68rem;border-radius:4px;font-weight:800;letter-spacing:0.5px;display:inline-block;">PAYMENT CANCELLED ×</span>`;
         } else {
-          paymentBadge = `<span class="badge-processing" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;padding:3px 7px;font-size:0.68rem;border-radius:4px;font-weight:800;letter-spacing:0.5px;display:inline-block;">PAYMENT PENDING ⏳</span>`;
+          paymentBadge = `<span class="badge-processing" style="background:#fef3c7;color:#92400e;border:1px solid #fde68a;padding:3px 7px;font-size:0.68rem;border-radius:4px;font-weight:800;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> PAYMENT PENDING</span>`;
         }
 
         // Format shipping address
@@ -650,7 +650,7 @@
         if (error) {
           window.adminToast('Error updating status: ' + error.message, true);
         } else {
-          window.adminToast(`✓ Order #${data?.order_number || ''} status updated to ${status}`);
+          window.adminToast(` Order #${data?.order_number || ''} status updated to ${status}`);
           // Update local memory
           const idx = allOrdersData.findIndex(o => o.id === orderId);
           if (idx > -1) {
@@ -673,7 +673,7 @@
     }
 
     async function confirmDeleteOrder(orderId, orderNum) {
-      if (!confirm(`Are you sure you want to permanently delete order #${orderNum}?\n\n⚠️ This will permanently remove the order record and all its ordered items from the database.`)) {
+      if (!confirm(`Are you sure you want to permanently delete order #${orderNum}?\n\n This will permanently remove the order record and all its ordered items from the database.`)) {
         return;
       }
 
@@ -697,7 +697,7 @@
         }
       }
 
-      window.adminToast(`✓ Order #${orderNum} deleted successfully!`);
+      window.adminToast(` Order #${orderNum} deleted successfully!`);
 
       // Close modal if currently viewing deleted order
       if (currentEditingOrderId === orderId) {
@@ -760,8 +760,8 @@
       const bodyHtml = `
         <!-- MODAL TAB NAVIGATION (NO PRINT) -->
         <div class="modal-tab-nav no-print">
-          <button class="modal-tab-btn active" id="modalTabSlipBtn" onclick="setModalTab('SLIP')">📄 PACKING SLIP &amp; RECEIPT</button>
-          <button class="modal-tab-btn" id="modalTabEditBtn" onclick="setModalTab('EDIT')">✏️ EDIT ORDER &amp; CUSTOMER DATA</button>
+          <button class="modal-tab-btn active" id="modalTabSlipBtn" onclick="setModalTab('SLIP')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>PACKING SLIP &amp; RECEIPT</button>
+          <button class="modal-tab-btn" id="modalTabEditBtn" onclick="setModalTab('EDIT')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-right:4px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>EDIT ORDER &amp; CUSTOMER DATA</button>
         </div>
 
         <!-- TAB 1: PACKING SLIP / INVOICE VIEW -->
@@ -773,7 +773,7 @@
                 <div style="display:flex; align-items:center; gap: 10px;">
                   <img src="images/logo.jpg" alt="Classic Collection Solapur" style="height: 36px; border-radius: 4px;" />
                   <div>
-                    <div style="font-weight: 900; font-size: 1.1rem; letter-spacing: 1px;">CLASSIC COLLECTION SOLAPUR</div>
+                    <div style="font-weight: 900; font-size: 1.1rem; letter-spacing: 1px;">CLASSIC COLLECTION</div>
                     <div style="font-size: 0.75rem; color: #666;">Official Store Invoice & Packing Slip</div>
                   </div>
                 </div>
@@ -788,8 +788,8 @@
                 <div style="background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
                   <div style="font-weight: 800; font-size: 0.75rem; color: #64748b; text-transform: uppercase; margin-bottom: 4px;">CUSTOMER DETAILS</div>
                   <div style="font-weight: 800; font-size: 0.95rem; color: #0f172a;">${order.customer_name || 'Guest'}</div>
-                  <div style="color: #334155; margin-top: 2px;">📞 ${order.customer_phone || '-'}</div>
-                  ${order.customer_email ? `<div style="color: #64748b; font-size: 0.8rem;">✉️ ${order.customer_email}</div>` : ''}
+                  <div style="color: #334155; margin-top: 2px;"> ${order.customer_phone || '-'}</div>
+                  ${order.customer_email ? `<div style="color: #64748b; font-size: 0.8rem;"> ${order.customer_email}</div>` : ''}
                 </div>
 
                 <div style="background: #f8fafc; padding: 12px; border-radius: 6px; border: 1px solid #e2e8f0;">
@@ -850,7 +850,7 @@
               </table>
 
               <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 8px; font-size: 0.8rem; color: #666;">
-                <span>Payment Mode: <strong>ONLINE (CASHFREE)</strong> — Status: <strong style="color:${order.payment_status === 'PAID' ? '#166534' : '#991b1b'};">${order.payment_status === 'PAID' ? 'PAID ONLINE ✓' : (order.payment_status === 'FAILED' || order.order_status === 'CANCELLED' ? 'PAYMENT CANCELLED ✕' : 'PAYMENT PENDING ⏳')}</strong></span>
+                <span>Payment Mode: <strong>ONLINE (CASHFREE)</strong> — Status: <strong style="color:${order.payment_status === 'PAID' ? '#166534' : '#991b1b'};">${order.payment_status === 'PAID' ? 'PAID ONLINE' : (order.payment_status === 'FAILED' || order.order_status === 'CANCELLED' ? 'PAYMENT CANCELLED' : 'PAYMENT PENDING')}</strong></span>
                 <span>Current Status: <strong>${order.order_status || 'PLACED'}</strong></span>
               </div>
             </div>
@@ -916,7 +916,7 @@
             </div>
             <div class="edit-form-group full-width" style="margin-top: 10px;">
               <button type="submit" class="btn-admin btn-admin-success" style="padding: 10px; font-weight: 800; font-size: 0.85rem; width: 100%;">
-                💾 SAVE ORDER CHANGES
+                 SAVE ORDER CHANGES
               </button>
             </div>
           </form>
@@ -938,7 +938,7 @@
               <span>PRINT PACKING SLIP</span>
             </button>
             <button class="btn-admin" onclick="confirmDeleteOrder('${order.id}', '${order.order_number}')" style="background: #dc2626; border: 1px solid #b91c1c; color: #fff; padding: 8px 14px; font-size: 0.82rem;">
-              🗑️ DELETE ORDER
+               DELETE ORDER
             </button>
             <button class="btn-admin" onclick="closeOrderModal()" style="background: #444; padding: 8px 14px; font-size: 0.82rem;">CLOSE</button>
           </div>
@@ -996,7 +996,7 @@
         }
       }
 
-      window.adminToast('✓ Order details updated successfully!');
+      window.adminToast(' Order details updated successfully!');
 
       // Update local memory
       const idx = allOrdersData.findIndex(o => o.id === orderId);

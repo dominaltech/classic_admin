@@ -88,7 +88,7 @@
         window.adminToast('Order Notifications Allowed & Device Registered!');
         const btn = document.getElementById('pushNotifyBtn');
         if (btn) {
-          btn.textContent = 'NOTIFICATIONS ENABLED ✓';
+          btn.textContent = 'NOTIFICATIONS ENABLED ';
           btn.style.background = '#2b9348';
         }
       } else {
@@ -485,22 +485,39 @@
     const filePath = `${folder}/${timestamp}_${randomStr}_${sanitizedName}.${cleanExt}`;
 
     try {
-      const { data, error: uploadError } = await client.storage
-        .from(bucket)
+      let activeBucket = bucket;
+      let uploadResult = await client.storage
+        .from(activeBucket)
         .upload(filePath, file, {
           cacheControl: '31536000, public, immutable',
           upsert: true,
           contentType: file.type || 'image/webp'
         });
 
-      if (uploadError) {
-        console.error(`Storage upload error (${bucket}):`, uploadError);
-        window.adminToast(`Storage Upload Error: ${uploadError.message || 'Check bucket & RLS settings'}`, true);
+      // Automatic fallback to product-images if requested bucket does not exist or fails
+      if (uploadResult.error && activeBucket !== 'product-images') {
+        const msg = (uploadResult.error.message || '').toLowerCase();
+        if (msg.includes('not found') || msg.includes('bucket') || uploadResult.error.statusCode === '404' || uploadResult.error.error === 'Bucket not found') {
+          console.warn(`Bucket ${activeBucket} failed. Retrying fallback upload to 'product-images'...`);
+          activeBucket = 'product-images';
+          uploadResult = await client.storage
+            .from(activeBucket)
+            .upload(filePath, file, {
+              cacheControl: '31536000, public, immutable',
+              upsert: true,
+              contentType: file.type || 'image/webp'
+            });
+        }
+      }
+
+      if (uploadResult.error) {
+        console.error(`Storage upload error (${activeBucket}):`, uploadResult.error);
+        window.adminToast(`Storage Upload Error: ${uploadResult.error.message || 'Check bucket & RLS settings'}`, true);
         return null;
       }
 
       const { data: publicUrlData } = client.storage
-        .from(bucket)
+        .from(activeBucket)
         .getPublicUrl(filePath);
 
       if (publicUrlData && publicUrlData.publicUrl) {
@@ -618,7 +635,7 @@
         return { error };
       }
 
-      window.adminToast(`✓ Delivery Charge set to ₹${fee} (Free above ₹${threshold}) applied store-wide!`);
+      window.adminToast(` Delivery Charge set to ₹${fee} (Free above ₹${threshold}) applied store-wide!`);
       return { success: true, data };
     } catch(err) {
       console.error('saveStoreDeliverySettings exception:', err);
@@ -783,7 +800,7 @@
     if ("Notification" in window && Notification.permission === "granted") {
       const btn = document.getElementById('pushNotifyBtn');
       if (btn) {
-        btn.textContent = 'NOTIFICATIONS ENABLED ✓';
+        btn.textContent = 'NOTIFICATIONS ENABLED ';
         btn.style.background = '#2b9348';
       }
     }
