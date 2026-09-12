@@ -1,6 +1,5 @@
-// CLASSIC COLLECTION SOLAPUR ADMIN SERVICE WORKER WITH PUSH NOTIFICATION DISPATCH (V4)
-
-const CACHE_NAME = 'classic-admin-v6_force_update';
+// CLASSIC COLLECTION SOLAPUR ADMIN SERVICE WORKER (V7 - LIGHT CREAM THEME)
+const CACHE_NAME = 'classic-admin-v7';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
