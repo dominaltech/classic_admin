@@ -1,6 +1,6 @@
 // CLASSIC COLLECTION SOLAPUR ADMIN SERVICE WORKER WITH PUSH NOTIFICATION DISPATCH (V4)
 
-const CACHE_NAME = 'urban-rich-admin-v4_force_update';
+const CACHE_NAME = 'classic-admin-v6_force_update';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -79,6 +79,14 @@ self.addEventListener('notificationclick', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+
+  // Never cache Supabase API or storage calls in admin panel
+  if (url.hostname.includes('supabase.co')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {

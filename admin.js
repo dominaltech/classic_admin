@@ -489,7 +489,7 @@
       let uploadResult = await client.storage
         .from(activeBucket)
         .upload(filePath, file, {
-          cacheControl: '31536000, public, immutable',
+          cacheControl: '300, must-revalidate',
           upsert: true,
           contentType: file.type || 'image/webp'
         });
@@ -501,7 +501,7 @@
         uploadResult = await client.storage
           .from(activeBucket)
           .upload(filePath, file, {
-            cacheControl: '31536000, public, immutable',
+            cacheControl: '300, must-revalidate',
             upsert: true,
             contentType: file.type || 'image/webp'
           });
