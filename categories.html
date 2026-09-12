@@ -304,7 +304,7 @@
     }
 
     function closeCategoryModal(e) {
-      if (e && e.target !== e.currentTarget) return;
+      if (e && e.target !== e.currentTarget && !e.target.classList.contains('modal-close-btn')) return;
       document.getElementById('categoryModal').classList.remove('active');
     }
 
@@ -349,7 +349,7 @@
               ${cat.is_active ? 'ACTIVE' : 'INACTIVE'}</span>
           </td>
           <td style="text-align:right;">
-            <button class="btn-admin" style="padding:4px 10px; font-size:0.75rem; background:#333;" onclick="openCategoryModalById('${cat.id}')">Edit</button>
+            <button class="btn-admin" style="padding:4px 10px; font-size:0.75rem; background:var(--dark-brown); color:#FAF5EE;" onclick="openCategoryModalById('${cat.id}')">Edit</button>
             <button class="btn-admin btn-admin-danger" style="padding:4px 10px; font-size:0.75rem;" onclick="handleDeleteCategory('${cat.id}', '${cat.name}')">Delete</button>
           </td>
         </tr>
@@ -380,7 +380,11 @@
         if (fileInput.files && fileInput.files[0]) {
           submitBtn.textContent = 'UPLOADING BANNER...';
           const uploadedUrl = await window.uploadFileToStorage(fileInput.files[0], 'product-images', 'categories');
-          if (uploadedUrl) banner_url = uploadedUrl;
+          if (uploadedUrl) {
+            banner_url = uploadedUrl;
+          } else {
+            throw new Error('Banner upload failed. Please verify storage permissions or upload a different image.');
+          }
         }
 
         const payload = { id, name, slug, description, banner_url, display_order, is_active };
@@ -395,7 +399,7 @@
         }
       } catch (err) {
         console.error(err);
-        window.adminToast('Exception: ' + err.message, true);
+        window.adminToast('Error: ' + err.message, true);
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'SAVE CATEGORY';

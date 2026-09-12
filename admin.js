@@ -494,20 +494,17 @@
           contentType: file.type || 'image/webp'
         });
 
-      // Automatic fallback to product-images if requested bucket does not exist or fails
+      // Automatic fallback to product-images if requested bucket fails
       if (uploadResult.error && activeBucket !== 'product-images') {
-        const msg = (uploadResult.error.message || '').toLowerCase();
-        if (msg.includes('not found') || msg.includes('bucket') || uploadResult.error.statusCode === '404' || uploadResult.error.error === 'Bucket not found') {
-          console.warn(`Bucket ${activeBucket} failed. Retrying fallback upload to 'product-images'...`);
-          activeBucket = 'product-images';
-          uploadResult = await client.storage
-            .from(activeBucket)
-            .upload(filePath, file, {
-              cacheControl: '31536000, public, immutable',
-              upsert: true,
-              contentType: file.type || 'image/webp'
-            });
-        }
+        console.warn(`Bucket ${activeBucket} failed (${uploadResult.error.message || ''}). Retrying fallback upload to 'product-images'...`);
+        activeBucket = 'product-images';
+        uploadResult = await client.storage
+          .from(activeBucket)
+          .upload(filePath, file, {
+            cacheControl: '31536000, public, immutable',
+            upsert: true,
+            contentType: file.type || 'image/webp'
+          });
       }
 
       if (uploadResult.error) {
@@ -711,11 +708,71 @@
 
   window.deleteAdminCategory = async function(catId) {
     const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
-    if (!client) return { error: 'Supabase client unavailable' };
+    if (!client) return { error: { message: 'Supabase client unavailable' } };
     try {
+      // Unlink any products assigned to this category so foreign key doesn't block deletion
+      await client.from('products').update({ category_id: null }).eq('category_id', catId);
       return await client.from('categories').delete().eq('id', catId);
     } catch (err) {
       console.error('deleteAdminCategory error:', err);
+      return { error: err };
+    }
+  };
+
+  // 8.5 HERO BANNERS MANAGEMENT ROUTINES
+  window.fetchAdminBanners = async function() {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { data: [], error: { message: 'Supabase client unavailable' } };
+    try {
+      const { data, error } = await client
+        .from('banners')
+        .select('*')
+        .order('display_order', { ascending: true });
+      return { data: data || [], error };
+    } catch (err) {
+      console.error('fetchAdminBanners error:', err);
+      return { data: [], error: err };
+    }
+  };
+
+  window.saveAdminBanner = async function(bannerData) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { error: { message: 'Supabase client unavailable' } };
+    try {
+      if (bannerData.id) {
+        return await client.from('banners').update({
+          title: bannerData.title,
+          subtitle: bannerData.subtitle || null,
+          badge_text: bannerData.badge_text || null,
+          link_url: bannerData.link_url || '#',
+          image_url: bannerData.image_url,
+          display_order: parseInt(bannerData.display_order) || 0,
+          is_active: bannerData.is_active !== false
+        }).eq('id', bannerData.id).select().single();
+      } else {
+        return await client.from('banners').insert([{
+          title: bannerData.title,
+          subtitle: bannerData.subtitle || null,
+          badge_text: bannerData.badge_text || null,
+          link_url: bannerData.link_url || '#',
+          image_url: bannerData.image_url,
+          display_order: parseInt(bannerData.display_order) || 0,
+          is_active: bannerData.is_active !== false
+        }]).select().single();
+      }
+    } catch (err) {
+      console.error('saveAdminBanner error:', err);
+      return { error: err };
+    }
+  };
+
+  window.deleteAdminBanner = async function(bannerId) {
+    const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
+    if (!client) return { error: { message: 'Supabase client unavailable' } };
+    try {
+      return await client.from('banners').delete().eq('id', bannerId);
+    } catch (err) {
+      console.error('deleteAdminBanner error:', err);
       return { error: err };
     }
   };

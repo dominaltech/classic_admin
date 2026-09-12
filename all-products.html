@@ -101,11 +101,11 @@
   </main>
 
   <!-- EDIT PRODUCT & GALLERY MODAL (#editModal) -->
-  <div class="modal-overlay" id="editModal">
-    <div class="modal-card">
+  <div class="modal-overlay" id="editModal" onclick="closeEditModal(event)">
+    <div class="modal-card" onclick="event.stopPropagation()">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border-light); padding-bottom: 12px;">
         <h3 style="font-family: var(--font-heading); font-size: 1.25rem; font-weight: 800;">EDIT PRODUCT, SIZES & GALLERY</h3>
-        <button onclick="closeEditModal()" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; font-weight: 700;">×</button>
+        <button type="button" onclick="closeEditModal()" class="modal-close-btn" style="background: none; border: none; font-size: 1.2rem; cursor: pointer; font-weight: 700;">×</button>
       </div>
 
       <form id="editProductForm">
@@ -546,7 +546,8 @@
       });
     }
 
-    function closeEditModal() {
+    function closeEditModal(e) {
+      if (e && e.target !== e.currentTarget && !e.target.classList.contains('modal-close-btn')) return;
       document.getElementById('editModal').classList.remove('active');
     }
 
@@ -575,7 +576,7 @@
           if (uploadedUrl) updatePayload.main_image = uploadedUrl;
         }
 
-        const client = window.urSbClient || window.adminSupabase;
+        const client = window.urSbClient || window.adminSupabase || (window.supabase ? window.supabase.createClient(window.UR_CONFIG.SUPABASE_URL, window.UR_CONFIG.SUPABASE_ANON_KEY) : null);
         if (!client) {
           window.adminToast('Supabase client error', true);
           saveBtn.disabled = false;
@@ -633,8 +634,15 @@
 
     async function deleteProduct(id) {
       if (!confirm('Are you sure you want to delete this product and all its gallery images?')) return;
-      const client = window.urSbClient || window.adminSupabase;
-      if (client) {
+      const client = window.urSbClient || window.adminSupabase || (window.supabase ? window.supabase.createClient(window.UR_CONFIG.SUPABASE_URL, window.UR_CONFIG.SUPABASE_ANON_KEY) : null);
+      if (!client) {
+        window.adminToast('Database client not connected.', true);
+        return;
+      }
+      try {
+        // Safe cleanup: delete child records first so foreign keys never fail
+        await client.from('product_variants').delete().eq('product_id', id);
+        await client.from('product_images').delete().eq('product_id', id);
         const { error } = await client.from('products').delete().eq('id', id);
         if (error) {
           window.adminToast('Delete error: ' + error.message, true);
@@ -642,6 +650,8 @@
           window.adminToast('Product deleted from inventory.');
           loadInventory();
         }
+      } catch(err) {
+        window.adminToast('Error deleting product: ' + err.message, true);
       }
     }
 

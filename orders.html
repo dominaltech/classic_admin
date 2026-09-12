@@ -1010,7 +1010,7 @@
     }
 
     function closeOrderModal(event) {
-      if (event && event.target !== event.currentTarget) return;
+      if (event && event.target !== event.currentTarget && !event.target.classList.contains('modal-close-btn')) return;
       document.getElementById('orderDetailModal').classList.remove('active');
       currentEditingOrderId = null;
     }
