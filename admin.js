@@ -777,28 +777,26 @@
     }
   };
 
-  // 9. SIZE PRESETS MANAGEMENT HELPERS
+  // 9. FABRIC CUT LENGTHS (METERS) PRESETS MANAGEMENT HELPERS
   window.fetchAdminSizePresets = async function() {
     const client = window.urSbClient || window.adminSupabase || createAdminSupabaseClient();
     if (!client) {
-      // Fallback defaults if offline or DB loading
+      // Fallback defaults for cloth material cut lengths (in meters)
       return {
         data: [
-          { type: 'alpha', size_label: 'XS', is_active: true, display_order: 1 },
-          { type: 'alpha', size_label: 'S', is_active: true, display_order: 2 },
-          { type: 'alpha', size_label: 'M', is_active: true, display_order: 3 },
-          { type: 'alpha', size_label: 'L', is_active: true, display_order: 4 },
-          { type: 'alpha', size_label: 'XL', is_active: true, display_order: 5 },
-          { type: 'alpha', size_label: 'XXL', is_active: true, display_order: 6 },
-          { type: 'alpha', size_label: '3XL', is_active: true, display_order: 7 },
-          { type: 'numeric', size_label: '28', is_active: true, display_order: 1 },
-          { type: 'numeric', size_label: '30', is_active: true, display_order: 2 },
-          { type: 'numeric', size_label: '32', is_active: true, display_order: 3 },
-          { type: 'numeric', size_label: '34', is_active: true, display_order: 4 },
-          { type: 'numeric', size_label: '36', is_active: true, display_order: 5 },
-          { type: 'numeric', size_label: '38', is_active: true, display_order: 6 },
-          { type: 'numeric', size_label: '40', is_active: true, display_order: 7 },
-          { type: 'numeric', size_label: '42', is_active: true, display_order: 8 }
+          { type: 'standard', size_label: '1.2M', is_active: true, display_order: 1 },
+          { type: 'standard', size_label: '1.4M', is_active: true, display_order: 2 },
+          { type: 'standard', size_label: '1.6M', is_active: true, display_order: 3 },
+          { type: 'standard', size_label: '1.8M', is_active: true, display_order: 4 },
+          { type: 'standard', size_label: '2.0M', is_active: true, display_order: 5 },
+          { type: 'standard', size_label: '2.25M', is_active: true, display_order: 6 },
+          { type: 'standard', size_label: '2.5M', is_active: true, display_order: 7 },
+          { type: 'suit', size_label: '2.8M', is_active: true, display_order: 8 },
+          { type: 'suit', size_label: '3.0M', is_active: true, display_order: 9 },
+          { type: 'suit', size_label: '3.25M', is_active: true, display_order: 10 },
+          { type: 'suit', size_label: '3.5M', is_active: true, display_order: 11 },
+          { type: 'suit', size_label: '4.0M', is_active: true, display_order: 12 },
+          { type: 'suit', size_label: '5.0M', is_active: true, display_order: 13 }
         ],
         error: null
       };
@@ -808,7 +806,28 @@
         .from('size_presets')
         .select('*')
         .order('display_order', { ascending: true });
-      return { data: data || [], error };
+      if (!error && data && data.length > 0) {
+        return { data, error: null };
+      }
+      // Return cloth material cut length defaults if table empty or not present
+      return {
+        data: [
+          { type: 'standard', size_label: '1.2M', is_active: true, display_order: 1 },
+          { type: 'standard', size_label: '1.4M', is_active: true, display_order: 2 },
+          { type: 'standard', size_label: '1.6M', is_active: true, display_order: 3 },
+          { type: 'standard', size_label: '1.8M', is_active: true, display_order: 4 },
+          { type: 'standard', size_label: '2.0M', is_active: true, display_order: 5 },
+          { type: 'standard', size_label: '2.25M', is_active: true, display_order: 6 },
+          { type: 'standard', size_label: '2.5M', is_active: true, display_order: 7 },
+          { type: 'suit', size_label: '2.8M', is_active: true, display_order: 8 },
+          { type: 'suit', size_label: '3.0M', is_active: true, display_order: 9 },
+          { type: 'suit', size_label: '3.25M', is_active: true, display_order: 10 },
+          { type: 'suit', size_label: '3.5M', is_active: true, display_order: 11 },
+          { type: 'suit', size_label: '4.0M', is_active: true, display_order: 12 },
+          { type: 'suit', size_label: '5.0M', is_active: true, display_order: 13 }
+        ],
+        error: null
+      };
     } catch (err) {
       console.error('fetchAdminSizePresets error:', err);
       return { data: [], error: err };

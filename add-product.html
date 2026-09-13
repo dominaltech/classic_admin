@@ -77,36 +77,36 @@
 
         <div class="form-group">
           <label>Product Description</label>
-          <textarea id="pDesc" rows="3" class="form-control" placeholder="240 GSM 100% bio-washed combed cotton streetwear oversized fit..."></textarea>
+          <textarea id="pDesc" rows="3" class="form-control" placeholder="Premium 420 GSM unstitched cloth material, ideal for bespoke formal, traditional & casual custom tailoring..."></textarea>
         </div>
 
         <!-- ===================================================================
-             SIZE & STOCK AVAILABILITY SELECTOR (INTERACTIVE BOX GRID)
+             FABRIC CUT LENGTHS (METERS) & STOCK AVAILABILITY SELECTOR
              =================================================================== -->
         <div class="form-group" style="background: #fafbfc; border: 1px solid var(--border-light); padding: 18px; border-radius: var(--radius-sm); margin-bottom: 24px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <label style="margin-bottom:0;">Available Sizes & Stock Status *</label>
+            <label style="margin-bottom:0;">Available Cut Lengths (Meters) &amp; Stock Status *</label>
             <div style="font-size:0.72rem; color:var(--text-muted);">
               Click box: <strong>In-Stock</strong> → <strong style="color:var(--accent-red);">Out-of-Stock (×)</strong> → <strong>Disabled</strong>
             </div>
           </div>
 
-          <!-- Size Mode Switcher -->
+          <!-- Cut Length Mode Switcher -->
           <div class="size-mode-tabs">
-            <button type="button" class="size-mode-btn active" id="modeAlphaBtn" onclick="switchSizeMode('alpha')">Alpha (S, M, L...)</button>
-            <button type="button" class="size-mode-btn" id="modeNumericBtn" onclick="switchSizeMode('numeric')">Numeric (28, 30, 32...)</button>
-            <button type="button" class="size-mode-btn" id="modeBothBtn" onclick="switchSizeMode('both')">All / Custom</button>
+            <button type="button" class="size-mode-btn active" id="modeStandardBtn" onclick="switchSizeMode('standard')">Standard Cuts (1.2M - 2.5M)</button>
+            <button type="button" class="size-mode-btn" id="modeSuitBtn" onclick="switchSizeMode('suit')">Suit &amp; Blazer Cuts (2.8M - 5.0M)</button>
+            <button type="button" class="size-mode-btn" id="modeAllBtn" onclick="switchSizeMode('all')">All / Custom Meters</button>
           </div>
 
-          <!-- Interactive Size Chips Grid -->
+          <!-- Interactive Cut Length Chips Grid -->
           <div id="productSizeGrid" class="size-box-grid">
             <!-- Rendered dynamically -->
           </div>
 
-          <!-- Add Custom Size Tag on the fly -->
+          <!-- Add Custom Meter Cut Tag on the fly -->
           <div class="custom-size-row">
-            <input type="text" id="customSizeInput" class="form-control" placeholder="Add custom size (e.g. 44, 4XL)" style="font-size:0.8rem; padding:7px 10px; text-transform:uppercase;">
-            <button type="button" class="btn-admin" style="padding:6px 12px; font-size:0.75rem;" onclick="addCustomSizeTag()">+ ADD</button>
+            <input type="text" id="customSizeInput" class="form-control" placeholder="Add custom cut length (e.g. 1.75M, 2.20M, 4.5M)" style="font-size:0.8rem; padding:7px 10px; text-transform:uppercase;">
+            <button type="button" class="btn-admin" style="padding:6px 12px; font-size:0.75rem;" onclick="addCustomSizeTag()">+ ADD METER</button>
           </div>
         </div>
 
@@ -318,20 +318,20 @@
 
     function switchSizeMode(mode) {
       currentSizeMode = mode;
-      document.getElementById('modeAlphaBtn').classList.toggle('active', mode === 'alpha');
-      document.getElementById('modeNumericBtn').classList.toggle('active', mode === 'numeric');
-      document.getElementById('modeBothBtn').classList.toggle('active', mode === 'both');
+      document.getElementById('modeStandardBtn').classList.toggle('active', mode === 'standard');
+      document.getElementById('modeSuitBtn').classList.toggle('active', mode === 'suit');
+      document.getElementById('modeAllBtn').classList.toggle('active', mode === 'all');
       renderSizeBoxes();
     }
 
     function handleCategoryChange(categoryId) {
       const cat = loadedCategories.find(c => c.id === categoryId);
       if (!cat) return;
-      const catName = cat.name.toLowerCase();
-      if (catName.includes('pant') || catName.includes('jean') || catName.includes('trouser') || catName.includes('cargo') || catName.includes('baggy')) {
-        switchSizeMode('numeric');
+      const catSlug = (cat.slug || cat.name || '').toLowerCase();
+      if (catSlug.includes('suiting')) {
+        switchSizeMode('suit');
       } else {
-        switchSizeMode('alpha');
+        switchSizeMode('standard');
       }
     }
 
@@ -342,14 +342,14 @@
       const keys = Object.keys(productSizesState);
       const filteredKeys = keys.filter(label => {
         const item = productSizesState[label];
-        if (currentSizeMode === 'both') return true;
-        if (currentSizeMode === 'alpha') return item.type === 'alpha' || item.type === 'custom';
-        if (currentSizeMode === 'numeric') return item.type === 'numeric' || item.type === 'custom';
+        if (currentSizeMode === 'all') return true;
+        if (currentSizeMode === 'standard') return item.type === 'standard' || item.type === 'custom';
+        if (currentSizeMode === 'suit') return item.type === 'suit' || item.type === 'custom';
         return true;
       });
 
       if (filteredKeys.length === 0) {
-        container.innerHTML = '<div style="color:#888; font-size:0.8rem;">No sizes available in this mode. Add one below.</div>';
+        container.innerHTML = '<div style="color:#888; font-size:0.8rem;">No cut lengths available in this mode. Add one below.</div>';
         return;
       }
 

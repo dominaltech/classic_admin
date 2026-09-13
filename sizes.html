@@ -45,49 +45,49 @@
   <main class="admin-container">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
       <div>
-        <h1 style="font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px;">MASTER SIZES & PRESETS</h1>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">Manage universal size presets for Alpha (S, M, L...) and Numeric (28, 30, 32...) apparel.</p>
+        <h1 style="font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px;">FABRIC CUT LENGTHS (METERS) &amp; PRESETS</h1>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">Manage universal cloth material cut length presets in meters for custom bespoke tailoring.</p>
       </div>
     </div>
 
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap:24px;">
       
-      <!-- 1. ALPHA SIZES CARD -->
+      <!-- 1. STANDARD CUT LENGTHS CARD -->
       <div class="stat-card" style="padding:24px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
           <div>
-            <h2 style="font-size:1.1rem; font-weight:900;">Alpha Sizes (Tees, Hoodies, Oversized)</h2>
-            <p style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Standard letter sizes for streetwear & upperwear</p>
+            <h2 style="font-size:1.1rem; font-weight:900;">Standard Cuts (Shirts, Kurtas, Trousers)</h2>
+            <p style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Cuts from 1.20M to 2.50M for shirts, waistcoats, kurtas and pants</p>
           </div>
           <span class="status-badge badge-placed" id="alphaCount">7 Active</span>
         </div>
 
         <div id="alphaSizesGrid" class="size-box-grid" style="margin-bottom:20px;">
-          <div style="color:#999; font-size:0.85rem;">Loading alpha sizes...</div>
+          <div style="color:#999; font-size:0.85rem;">Loading standard cuts...</div>
         </div>
 
-        <form onsubmit="handleAddPreset(event, 'alpha')" style="display:flex; gap:8px;">
-          <input type="text" id="newAlphaInput" class="form-control" placeholder="Add size (e.g. 4XL, OS)" style="text-transform:uppercase;" required>
+        <form onsubmit="handleAddPreset(event, 'standard')" style="display:flex; gap:8px;">
+          <input type="text" id="newAlphaInput" class="form-control" placeholder="Add cut length (e.g. 1.75M, 2.20M)" style="text-transform:uppercase;" required>
           <button type="submit" class="btn-admin btn-admin-success" style="white-space:nowrap;">+ ADD</button>
         </form>
       </div>
 
-      <!-- 2. NUMERIC SIZES CARD -->
+      <!-- 2. SUIT & BLAZER CUT LENGTHS CARD -->
       <div class="stat-card" style="padding:24px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
           <div>
-            <h2 style="font-size:1.1rem; font-weight:900;">Numeric Sizes (Jeans, Pants, Waist)</h2>
-            <p style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Number sizes for trousers, cargos & linen pants</p>
+            <h2 style="font-size:1.1rem; font-weight:900;">Suit &amp; Blazer Cuts (Two-Piece, Three-Piece, Coats)</h2>
+            <p style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">Cuts from 2.80M to 5.00M for blazers, safari suits, bandhgalas and sherwanis</p>
           </div>
-          <span class="status-badge badge-placed" id="numericCount">8 Active</span>
+          <span class="status-badge badge-placed" id="numericCount">6 Active</span>
         </div>
 
         <div id="numericSizesGrid" class="size-box-grid" style="margin-bottom:20px;">
-          <div style="color:#999; font-size:0.85rem;">Loading numeric sizes...</div>
+          <div style="color:#999; font-size:0.85rem;">Loading suit cuts...</div>
         </div>
 
-        <form onsubmit="handleAddPreset(event, 'numeric')" style="display:flex; gap:8px;">
-          <input type="text" id="newNumericInput" class="form-control" placeholder="Add size (e.g. 44, 46)" style="text-transform:uppercase;" required>
+        <form onsubmit="handleAddPreset(event, 'suit')" style="display:flex; gap:8px;">
+          <input type="text" id="newNumericInput" class="form-control" placeholder="Add cut length (e.g. 3.25M, 4.5M)" style="text-transform:uppercase;" required>
           <button type="submit" class="btn-admin btn-admin-success" style="white-space:nowrap;">+ ADD</button>
         </form>
       </div>
@@ -231,8 +231,8 @@
       const { data, error } = await window.fetchAdminSizePresets();
       allPresets = data || [];
 
-      const alphaList = allPresets.filter(p => p.type === 'alpha');
-      const numericList = allPresets.filter(p => p.type === 'numeric');
+      const alphaList = allPresets.filter(p => p.type === 'standard' || p.type === 'alpha');
+      const numericList = allPresets.filter(p => p.type === 'suit' || p.type === 'numeric');
 
       document.getElementById('alphaCount').textContent = `${alphaList.filter(p => p.is_active).length} Active`;
       document.getElementById('numericCount').textContent = `${numericList.filter(p => p.is_active).length} Active`;

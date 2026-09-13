@@ -149,24 +149,24 @@
           <textarea id="editProdDesc" rows="3" class="form-control"></textarea>
         </div>
 
-        <!-- SIZES & STOCK AVAILABILITY SELECTOR -->
+        <!-- FABRIC CUT LENGTHS & STOCK AVAILABILITY SELECTOR -->
         <div class="form-group" style="background: #fafbfc; border: 1px solid var(--border-light); padding: 16px; border-radius: 4px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <label style="margin-bottom:0;">Size Availability & Stock Status</label>
+            <label style="margin-bottom:0;">Cut Length Availability &amp; Stock Status (Meters)</label>
             <span style="font-size:0.72rem; color:var(--text-muted);">Click box to toggle status</span>
           </div>
 
           <div class="size-mode-tabs">
-            <button type="button" class="size-mode-btn active" id="editModeAlphaBtn" onclick="switchEditSizeMode('alpha')">Alpha (S, M, L...)</button>
-            <button type="button" class="size-mode-btn" id="editModeNumericBtn" onclick="switchEditSizeMode('numeric')">Numeric (28, 30, 32...)</button>
-            <button type="button" class="size-mode-btn" id="editModeBothBtn" onclick="switchEditSizeMode('both')">All / Custom</button>
+            <button type="button" class="size-mode-btn active" id="editModeStandardBtn" onclick="switchEditSizeMode('standard')">Standard Cuts (1.2M - 2.5M)</button>
+            <button type="button" class="size-mode-btn" id="editModeSuitBtn" onclick="switchEditSizeMode('suit')">Suit &amp; Blazer Cuts (2.8M - 5.0M)</button>
+            <button type="button" class="size-mode-btn" id="editModeAllBtn" onclick="switchEditSizeMode('all')">All / Custom Meters</button>
           </div>
 
           <div id="editProductSizeGrid" class="size-box-grid"></div>
 
           <div class="custom-size-row">
-            <input type="text" id="editCustomSizeInput" class="form-control" placeholder="Add custom size (e.g. 44, 4XL)" style="font-size:0.8rem; padding:7px 10px; text-transform:uppercase;">
-            <button type="button" class="btn-admin" style="padding:6px 12px; font-size:0.75rem;" onclick="addEditCustomSizeTag()">+ ADD</button>
+            <input type="text" id="editCustomSizeInput" class="form-control" placeholder="Add custom cut length (e.g. 1.75M, 2.20M, 4.5M)" style="font-size:0.8rem; padding:7px 10px; text-transform:uppercase;">
+            <button type="button" class="btn-admin" style="padding:6px 12px; font-size:0.75rem;" onclick="addEditCustomSizeTag()">+ ADD METER</button>
           </div>
         </div>
 
@@ -437,9 +437,9 @@
 
     function switchEditSizeMode(mode) {
       editSizeMode = mode;
-      document.getElementById('editModeAlphaBtn').classList.toggle('active', mode === 'alpha');
-      document.getElementById('editModeNumericBtn').classList.toggle('active', mode === 'numeric');
-      document.getElementById('editModeBothBtn').classList.toggle('active', mode === 'both');
+      document.getElementById('editModeStandardBtn').classList.toggle('active', mode === 'standard');
+      document.getElementById('editModeSuitBtn').classList.toggle('active', mode === 'suit');
+      document.getElementById('editModeAllBtn').classList.toggle('active', mode === 'all');
       renderEditSizeBoxes();
     }
 
@@ -450,9 +450,9 @@
       const keys = Object.keys(editProductSizesState);
       const filteredKeys = keys.filter(label => {
         const item = editProductSizesState[label];
-        if (editSizeMode === 'both') return true;
-        if (editSizeMode === 'alpha') return item.type === 'alpha' || item.type === 'custom';
-        if (editSizeMode === 'numeric') return item.type === 'numeric' || item.type === 'custom';
+        if (editSizeMode === 'all') return true;
+        if (editSizeMode === 'standard') return item.type === 'standard' || item.type === 'custom';
+        if (editSizeMode === 'suit') return item.type === 'suit' || item.type === 'custom';
         return true;
       });
 
