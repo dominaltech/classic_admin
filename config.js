@@ -17,8 +17,8 @@ window.UR_CONFIG = {
   CASHFREE_ENV: "PRODUCTION",
 
   // Web Push Notifications VAPID Keys
-  VAPID_SUBJECT: "mailto:support@classicsolapur.com",
-  VAPID_PUBLIC_KEY: "",
+  VAPID_SUBJECT: "mailto:classicbydominal@gmail.com",
+  VAPID_PUBLIC_KEY: "BFPUamUZsFMswRhmwXNa1lCFPcCLCaBLVN7R4Kuae6ZoVMoFsxNZePyhkTBvTDqp-PqlknIKn6H-NrZthA5JiU8",
   VAPID_PRIVATE_KEY: ""
 };
 
