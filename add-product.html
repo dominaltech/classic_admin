@@ -270,8 +270,8 @@
     let stagedGalleryFiles = [];
     let loadedCategories = [];
     let masterSizePresets = [];
-    let currentSizeMode = 'alpha'; // 'alpha' | 'numeric' | 'both'
-    // Map of sizeLabel -> { status: 'in-stock' | 'out-of-stock' | 'unselected', type: 'alpha'|'numeric'|'custom' }
+    let currentSizeMode = 'standard'; // 'standard' | 'suit' | 'all'
+    // Map of sizeLabel -> { status: 'in-stock' | 'out-of-stock' | 'unselected', type: 'standard'|'suit'|'custom' }
     let productSizesState = {};
 
     function openDrawer() { document.getElementById('adminDrawer').classList.add('active'); }
@@ -571,8 +571,8 @@
             };
           });
         } else {
-          // Fallback if none picked
-          variantRows = ['S', 'M', 'L', 'XL'].map(size => ({
+          // Fallback cloth material cut lengths if none picked
+          variantRows = ['1.2M', '1.6M', '2.0M', '2.5M', '3.0M'].map(size => ({
             product_id: productId,
             size: size,
             stock_quantity: 25,

@@ -327,7 +327,7 @@
     let editStagedNewFiles = [];
     let adminCategories = [];
     let editProductSizesState = {};
-    let editSizeMode = 'alpha';
+    let editSizeMode = 'standard';
 
     function openDrawer() { document.getElementById('adminDrawer').classList.add('active'); }
     function closeDrawer(e) { if(e) e.stopPropagation(); document.getElementById('adminDrawer').classList.remove('active'); }
@@ -422,9 +422,12 @@
         if (variants && variants.length > 0) {
           variants.forEach(v => {
             const isOut = v.is_in_stock === false || v.stock_quantity === 0;
+            const presetMatch = (presets || []).find(pr => pr.size_label === v.size);
+            const numVal = parseFloat(v.size) || 0;
+            const cutType = presetMatch ? presetMatch.type : (numVal >= 2.8 ? 'suit' : 'standard');
             editProductSizesState[v.size] = {
               status: isOut ? 'out-of-stock' : 'in-stock',
-              type: /^\d+$/.test(v.size) ? 'numeric' : 'alpha',
+              type: cutType,
               variant_id: v.id
             };
           });
