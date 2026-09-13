@@ -510,7 +510,11 @@
             is_in_stock: true,
             sku: `CC-${slug.substring(0, 10).toUpperCase()}-${sz}`
           }));
-          await client.from('product_variants').insert(variants);
+          const { error: vErr } = await client.from('product_variants').insert(variants);
+          if (vErr && (vErr.message || '').includes('is_in_stock')) {
+            const fallbackVariants = variants.map(({ is_in_stock, ...rest }) => rest);
+            await client.from('product_variants').insert(fallbackVariants);
+          }
 
           successCount++;
         } catch(err) {

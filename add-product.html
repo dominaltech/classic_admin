@@ -581,7 +581,11 @@
           }));
         }
 
-        await client.from('product_variants').insert(variantRows);
+        const { error: variantErr } = await client.from('product_variants').insert(variantRows);
+        if (variantErr && (variantErr.message || '').includes('is_in_stock')) {
+          const fallbackRows = variantRows.map(({ is_in_stock, ...rest }) => rest);
+          await client.from('product_variants').insert(fallbackRows);
+        }
 
         window.adminToast('Product, sizes, and gallery images published successfully!');
         setTimeout(() => {

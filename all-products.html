@@ -619,7 +619,11 @@
               sku: `CC-${id.substring(0, 8).toUpperCase()}-${size}`
             };
           });
-          await client.from('product_variants').insert(newVariants);
+          const { error: variantErr } = await client.from('product_variants').insert(newVariants);
+          if (variantErr && (variantErr.message || '').includes('is_in_stock')) {
+            const fallbackVariants = newVariants.map(({ is_in_stock, ...rest }) => rest);
+            await client.from('product_variants').insert(fallbackVariants);
+          }
         }
 
         window.adminToast('Product details, sizes, and gallery updated successfully!');

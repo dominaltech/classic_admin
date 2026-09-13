@@ -593,7 +593,7 @@
       const { data, error } = await client
         .from('store_settings')
         .select('*')
-        .eq('id', 'default')
+        .limit(1)
         .maybeSingle();
 
       if (error || !data) {
@@ -617,23 +617,43 @@
       const fee = parseFloat(deliveryFee) || 0;
       const threshold = parseFloat(freeShippingAbove) || 0;
 
-      const { data, error } = await client
+      // 1. Check for existing settings row (handles any UUID or string ID in database)
+      const { data: existing } = await client
         .from('store_settings')
-        .upsert({
-          id: 'default',
-          delivery_fee: fee,
-          free_shipping_above: threshold,
-          updated_at: new Date()
-        }, { onConflict: 'id' });
+        .select('id')
+        .limit(1)
+        .maybeSingle();
 
-      if (error) {
-        console.error('saveStoreDeliverySettings error:', error);
-        window.adminToast('Error saving delivery charges: ' + error.message);
-        return { error };
+      let result;
+      if (existing && existing.id) {
+        result = await client
+          .from('store_settings')
+          .update({
+            delivery_fee: fee,
+            free_shipping_above: threshold,
+            updated_at: new Date()
+          })
+          .eq('id', existing.id)
+          .select();
+      } else {
+        result = await client
+          .from('store_settings')
+          .insert([{
+            delivery_fee: fee,
+            free_shipping_above: threshold,
+            updated_at: new Date()
+          }])
+          .select();
       }
 
-      window.adminToast(` Delivery Charge set to ₹${fee} (Free above ₹${threshold}) applied store-wide!`);
-      return { success: true, data };
+      if (result.error) {
+        console.error('saveStoreDeliverySettings error:', result.error);
+        window.adminToast('Error saving delivery charges: ' + result.error.message);
+        return { error: result.error };
+      }
+
+      window.adminToast(`Delivery Charge set to ₹${fee} (Free above ₹${threshold}) applied store-wide!`);
+      return { success: true, data: result.data };
     } catch(err) {
       console.error('saveStoreDeliverySettings exception:', err);
       window.adminToast('Error saving delivery charges: ' + err.message);
